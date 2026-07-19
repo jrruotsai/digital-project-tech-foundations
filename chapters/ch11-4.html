@@ -123,54 +123,51 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>Repository、Commit 與 Branch</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</p><ul><li>看懂 Repository 與 Commit 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>Repository、Commit 與 Branch</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</p><ul><li>能說明 Repository：保存專案檔案與版本歷史的儲存庫。</li><li>能區分 Repository 與 Commit／Branch 在流程中的用途。</li><li>遇到問題時，先確認環境、版本與變更範圍。</li></ul></section>
 
   <section class="card"><span class="tag">圖解</span><h2>Repository 裡，Commit 串成歷史，Branch 分出工作線</h2><figure class="learning-figure" aria-labelledby="git-caption"><span class="figure-eyebrow">VERSION GRAPH / 版本歷史</span><div class="git-graph"><span class="git-dot">A</span><div class="git-label"><b>main</b> 建立課程首頁</div><span class="git-dot">B</span><div class="git-label"><b>main</b> 新增第一章</div><span class="git-dot" style="border-color:var(--visual-gold);color:var(--visual-gold)">C</span><div class="git-label"><b>feature/visual-aids</b> 從 B 分出，加入圖解</div><span class="git-dot" style="border-color:var(--visual-green);color:var(--visual-green)">D</span><div class="git-label"><b>merge</b> 審查後合回 main</div></div><div class="diagram-callout">Repository 是整本歷史；Commit 是一個可說明的修改節點；Branch 則讓尚未完成的工作不影響主線。</div><figcaption id="git-caption">好的 Commit 範圍小而完整，日後才能清楚審查、定位與回復。</figcaption></figure></section>
 
-  <section class="card"><span class="tag">情境</span><h2>工作現場：Repository、Commit 與 Branch</h2><p>測試環境正常的變更，上線後卻出現設定差異。團隊知道問題和「Repository」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。</p></section>
+<section class="card"><span class="tag">案例起點</span><h2>Repository 和 Commit／Branch 沒有寫清楚時</h2><p>Northstar 的規格同時提到 Repository 與 Commit／Branch，卻沒有標出兩者的適用條件與處理邊界。</p><div class="bubble">Repository：保存專案檔案與版本歷史的儲存庫。；Commit／Branch：Commit 是一組變更；Branch 是隔離工作的版本線。</div><p>測試時要避免這個結果：把多個無關修改塞進同一 Commit，審查與回復都會變難。</p></section>
 
-  <section class="card"><span class="tag">情境例子 1/2</span><h2>先把「Repository」當成一張交接單</h2><p>交接單會寫清楚誰交給誰、交付什麼、何時完成。少一欄，接手者就得猜。企業系統也是一樣：Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</p><div class="note"><span class="nt">先記住</span>名詞只是入口；真正要確認的是責任、資料、規則與可觀察結果。</div></section>
+<section class="card"><span class="tag">概念拆解 1/2</span><h2>Repository 的處理邊界</h2><p><strong>Repository</strong>：保存專案檔案與版本歷史的儲存庫。</p><p>套用到本章情境，第一步是確認環境、版本與變更範圍。確認 Repository 的適用範圍後，再檢查 Commit／Branch，不從畫面直接猜原因。</p><div class="note"><span class="nt">判斷重點</span>說明 Repository 時，要交代誰提供輸入、系統套用哪條規則，以及會產生什麼結果。</div></section>
 
-  <section class="card"><span class="tag">情境例子 2/2</span><h2>規則要能處理例外</h2><p>順利的案例通常看不出設計好壞。資料空白、訊息重送、權限不足或服務延遲時，規則是否仍說得通，才是實務考驗。</p><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。</p><div class="note"><span class="nt">判斷方式</span>把正常路徑和一個失敗情境各走一次。</div></section>
+<section class="card"><span class="tag">概念拆解 2/2</span><h2>Commit／Branch 與 Repository 的差別</h2><p><strong>Commit／Branch</strong>：Commit 是一組變更；Branch 是隔離工作的版本線。</p><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</p><div class="note"><span class="nt">不要混用</span>Repository 與 Commit／Branch 不能互換；規格要分別寫出兩者的輸入、處理方式與輸出。</div></section>
 
-  <section class="card"><span class="tag">正式定義</span><h2>本章術語定義</h2><table><tr><th>術語</th><th>工作定義</th></tr><tr><td><strong>Repository</strong></td><td>保存專案檔案與版本歷史的儲存庫</td></tr><tr><td><strong>Commit／Branch</strong></td><td>Commit 是一組變更；Branch 是隔離工作的版本線</td></tr><tr><td><strong>Evidence</strong></td><td>可用來核對本章結果的 Log、設定、資料、時間、版本或識別值。</td></tr></table><p>定義先回答「它是什麼」，後面的案例再回答「什麼時候用」。</p></section>
+<section class="card"><span class="tag">精確定義</span><h2>本章名詞的工作定義</h2><table><tr><th>術語</th><th>定義</th><th>判斷時要問</th></tr><tr><td><strong>Repository</strong></td><td>保存專案檔案與版本歷史的儲存庫。</td><td>它接收什麼輸入，完成後留下什麼結果？</td></tr><tr><td><strong>Commit／Branch</strong></td><td>Commit 是一組變更；Branch 是隔離工作的版本線。</td><td>它和 Repository 的邊界在哪裡？</td></tr><tr><td><strong>Evidence</strong></td><td>能證明 Repository 或 Commit／Branch 實際結果的原始資料，例如 Request／Response、Log、時間、版本與識別值。</td><td>哪一筆原始紀錄能支持目前的判斷？</td></tr></table><p>定義 Repository 與 Commit／Branch 時，必須寫出用途、處理邊界和可觀察結果。</p></section>
 
-  <section class="card"><span class="tag">串起來看</span><h2>把完整流程走一次</h2><pre>需求或事件發生
-→ 確認 Repository 的定義與責任
-→ 依規則處理 Commit
-→ 記錄輸入、結果與識別值
-→ 檢查例外與失敗
-→ 由負責人確認後續動作</pre><p>每一箭頭都要能回答兩件事：誰負責，以及失敗後去哪裡查。</p></section>
-
-  <section class="card"><span class="tag">為什麼要學這個</span><h2>顧問會在哪裡用到</h2><h3>需求與設計會議</h3><p>部署協調人員需要把「Repository、Commit 與 Branch」改寫成可確認的規則，放進版本紀錄與上線檢核表。</p><h3>異常排查</h3><p>出現問題時，先用本章概念縮小範圍，再請工程師或系統管理者查細節，溝通會快很多。</p></section>
-
-  <section class="card"><span class="tag">核心概念 1/2</span><h2>先確認責任與來源</h2><h3>概念一：誰負責決定</h3><p>技術上能修改，不等於有權決定。先找出資料、設定或流程的負責人。</p><h3>概念二：從哪裡取得證據</h3><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。 要用實際設定、請求、回應或紀錄核對，不能只看畫面印象。</p></section>
-
-  <section class="card"><span class="tag">核心概念 2/2</span><h2>正常路徑之外，還有失敗路徑</h2><h3>概念三：先定成功標準</h3><p>如果不知道正確結果應該長什麼樣，就無法判斷目前是成功、延遲還是失敗。</p><h3>概念四：例外要留下線索</h3><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。 因此要留下時間、來源、識別值與處理結果。</p></section>
-
-  <section class="card"><span class="tag">容易混淆</span><h2>三個判斷不要混在一起</h2><table><tr><th>容易混淆</th><th>怎麼分</th></tr><tr><td>Repository vs Commit</td><td>先看兩者在流程中負責的動作，不要只看名稱</td></tr><tr><td>技術成功 vs 業務正確</td><td>寫入成功不保證值、對象或權限符合規則</td></tr><tr><td>現象 vs 根因</td><td>畫面錯誤是現象，根因要靠跨層證據確認</td></tr></table></section>
-
-  <section class="card"><span class="tag">案例</span><h2>Northstar Electronics：Repository、Commit 與 Branch</h2><p>Northstar Electronics 在「把 CRM 設定與程式從 UAT 發布到 Production」流程中遇到「Repository、Commit 與 Branch」相關問題。顧問先把概念放回資料流，再決定是否調整設定。</p><pre>Change → Version Control → Build → Deploy → Smoke Test → Release／Rollback
+<section class="card"><span class="tag">流程位置</span><h2>Repository 在整體流程中的位置</h2><pre>Change → Version Control → Build → Deploy → Smoke Test → Release／Rollback
 → 觀察結果與例外
-→ 記錄負責人與處理決定</pre><ol><li>先取得一筆正常與一筆異常樣本。</li><li>核對 Repository、Commit／Branch 的定義與適用範圍。</li><li>讓  確認規則，並把結果寫回。</li></ol><div class="note"><span class="nt">第一個好問題</span>「哪一筆資料、哪一個時間點，能驗證目前的假設？」</div></section>
+→ 記錄負責人與處理決定</pre><p>沿著流程逐段比對輸入與輸出。若 Repository 的輸入正確而 Commit／Branch 的輸出不符預期，就從兩者之間的邊界開始查。</p></section>
 
-  <section class="card"><span class="tag">延伸對照（選讀）</span><h2>在企業應用裡可能看到的樣子</h2><p>不熟悉特定產品的話，可以跳過。</p><table><tr><th>通用概念</th><th>常見落點</th></tr><tr><td>Repository</td><td>設定頁、整合規格、權限政策或程式呼叫</td></tr><tr><td>Commit</td><td>資料欄位、狀態、Token、事件或執行紀錄</td></tr><tr><td>Evidence</td><td>Request ID、時間、版本、來源系統與 Log</td></tr></table></section>
+<section class="card"><span class="tag">專案應用</span><h2>這個概念會出現在哪些工作？</h2><h3>規格與設計</h3><p>部署協調人員需要把「Repository、Commit 與 Branch」改寫成可確認的規則，放進版本紀錄與上線檢核表。</p><h3>問題排查</h3><p>先確認環境、版本與變更範圍，再分辨 Code、Configuration 與 Metadata。這能分辨問題是否位於 Repository 或 Commit／Branch。</p></section>
 
-  <section class="card"><span class="tag">常見誤解</span><h2>三個常見的誤判</h2><h3>誤解一：「畫面沒報錯就是成功」</h3><p>背景處理仍可能失敗，要看實際結果與紀錄。</p><h3>誤解二：「最新的值一定正確」</h3><p>時間只能說明先後，不能取代責任與業務規則。</p><h3>誤解三：「重跑一次就會好」</h3><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。 重跑前先確認是否安全，並保留原始證據。</p></section>
+<section class="card"><span class="tag">核心概念 1/2</span><h2>輸入、規則與輸出要分開寫</h2><h3>輸入</h3><p>列出 Repository 開始前已知的資料、身分、事件或設定。輸入不明，後面的結果就無法比較。</p><h3>規則與輸出</h3><p>Commit／Branch 執行後，保存實際套用的規則版本、Response、狀態或資料值。不要用「看起來正常」代替可查證結果。</p></section>
 
-  <section class="card"><span class="tag">遇到問題先查什麼</span><h2>Repository 發生異常時的排查順序</h2><ol><li>1. 確認環境、版本與變更範圍。</li><li>2. 分辨 Code、Configuration 與 Metadata。</li><li>3. 檢查 Branch、Commit 與審查紀錄。</li><li>4. 核對 Secret、備份與 Rollback Plan。</li><li>5. 部署後執行 Smoke Test、監控與業務驗證。</li></ol><p>每一步都記錄查到的證據與下一個判斷。不要同時修改多個設定，否則無法知道哪個改動有效。</p></section>
+<section class="card"><span class="tag">核心概念 2/2</span><h2>成功條件和失敗條件都要具體</h2><h3>成功條件</h3><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。 驗收 Repository 與 Commit／Branch 時，寫明預期狀態、資料值與完成時間。</p><h3>失敗條件</h3><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。 Repository 或 Commit／Branch 失敗時，保留原始輸入、環境、時間與識別值。</p></section>
 
-  <section class="card"><span class="tag">重點整理</span><h2>帶走這四句話</h2><ol><li>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</li><li>先確認責任與成功標準，再討論工具。</li><li>正常與失敗路徑都要能留下可追查的證據。</li><li>把多個無關修改塞進同一 Commit，審查與回復都會變難。</li></ol></section>
+<section class="card"><span class="tag">容易混淆</span><h2>用處理邊界分清楚三組概念</h2><table><tr><th>容易混淆</th><th>實際差別</th></tr><tr><td>Repository vs Commit／Branch</td><td>Repository：保存專案檔案與版本歷史的儲存庫。 Commit／Branch：Commit 是一組變更；Branch 是隔離工作的版本線。</td></tr><tr><td>規格存在 vs 實際生效</td><td>Repository 的文件是預期規則；Commit／Branch 的設定值、Response 或 Log 才能證明實際結果。</td></tr><tr><td>單次成功 vs 穩定可重現</td><td>Repository 單次成功不代表 Commit／Branch 在其他條件下也正確；要用相同輸入重做。</td></tr></table></section>
 
-  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 1/4</span><h2>關於「Repository、Commit 與 Branch」，哪個說法正確？</h2><button class="opt" data-val="A" type="button">A. Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</button><button class="opt" data-val="B" type="button">B. 只要畫面沒有錯誤，就不需要查結果</button><button class="opt" data-val="C" type="button">C. 所有例外都可以直接重跑，不必確認</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</div></div></section>
+<section class="card"><span class="tag">案例</span><h2>Northstar Electronics：Repository／Commit／Branch</h2><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。</p><pre>Change → Version Control → Build → Deploy → Smoke Test → Release／Rollback
+→ 觀察結果與例外
+→ 記錄負責人與處理決定</pre><ol><li>確認環境、版本與變更範圍。</li><li>分辨 Code、Configuration 與 Metadata。</li><li>用同一筆測試資料比對 Repository 的輸入與 Commit／Branch 的輸出。</li></ol><div class="note"><span class="nt">完成標準</span>能指出第一個不符規格的值、發生時間與負責系統。</div></section>
 
-  <section class="card quiz-card" data-answer="B"><span class="tag">檢核 2/4</span><h2>Repository 與 Commit／Branch 的差異，哪個說法最準確？</h2><button class="opt" data-val="A" type="button">A. 兩者只是不同叫法，可以互換</button><button class="opt" data-val="B" type="button">B. 保存專案檔案與版本歷史的儲存庫；Commit 是一組變更；Branch 是隔離工作的版本線</button><button class="opt" data-val="C" type="button">C. 只要系統能運作，就不需要區分兩者</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>B</strong>。兩個術語在流程中的責任不同，先分清楚才能選對規則。</div></div></section>
+<section class="card"><span class="tag">規格落點</span><h2>名詞應該寫進哪些文件？</h2><table><tr><th>內容</th><th>文件中的寫法</th></tr><tr><td>Repository</td><td>保存專案檔案與版本歷史的儲存庫。 補上負責系統、輸入與成功結果。</td></tr><tr><td>Commit／Branch</td><td>Commit 是一組變更；Branch 是隔離工作的版本線。 補上適用條件、例外與版本。</td></tr><tr><td>Evidence</td><td>列出 Repository／Commit／Branch 的查詢位置、保留時間與關聯鍵。</td></tr></table></section>
 
-  <section class="card quiz-card" data-answer="C"><span class="tag">檢核 3/4</span><h2>Northstar 的「Repository、Commit 與 Branch」出現異常，第一個應取得哪組證據？</h2><button class="opt" data-val="A" type="button">A. 只看最後一次畫面截圖</button><button class="opt" data-val="B" type="button">B. 直接刪除失敗資料後重做</button><button class="opt" data-val="C" type="button">C. 確認環境、版本與變更範圍，再保留時間、來源與結果</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>C</strong>。先確認適用範圍與可追查證據，才能判斷問題落在哪一層。</div></div></section>
+<section class="card"><span class="tag">常見誤解</span><h2>三個會讓排查走錯方向的假設</h2><h3>把 Repository 和 Commit／Branch 當成同一件事</h3><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。</p><h3>只看最後畫面</h3><p>畫面是流程的最後一層。仍要核對 Repository 的輸入與 Commit／Branch 的執行紀錄。</p><h3>一次改多個條件</h3><p>同時修改 Repository 與 Commit／Branch 的條件，即使恢復也無法歸因。每次只改一項。</p></section>
 
-  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 4/4</span><h2>哪個做法最能降低「Repository」相關的誤判？</h2><button class="opt" data-val="A" type="button">A. 分辨 Code、Configuration 與 Metadata，並一次驗證一個假設</button><button class="opt" data-val="B" type="button">B. 同時修改所有環境與設定直到畫面恢復</button><button class="opt" data-val="C" type="button">C. 只採用最新看到的值，不保留原始紀錄</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。依責任與證據逐步排查，比憑最新值或一次改很多項更可靠。</div></div></section>
+<section class="card"><span class="tag">排查順序</span><h2>Repository 發生異常時的排查順序</h2><ol><li>1. 確認環境、版本與變更範圍。</li><li>2. 分辨 Code、Configuration 與 Metadata。</li><li>3. 檢查 Branch、Commit 與審查紀錄。</li><li>4. 核對 Secret、備份與 Rollback Plan。</li><li>5. 部署後執行 Smoke Test、監控與業務驗證。</li></ol><p>每一步先記錄原始值再做下一步。若修改 Repository 或 Commit／Branch 的設定，保存修改前後值與時間。</p></section>
 
-  <section class="card" id="finishCard"><span class="tag">本章完成</span><h2>辛苦了，本章讀完了</h2><p id="scoreText"></p><p>留一個小小的思考題：</p><div class="bubble">如果今天就要把「Repository、Commit 與 Branch」寫進專案規格，您會先補上哪一項責任或驗證資訊？</div><p>下一章會接著學「Merge、Pull Request 與 Conflict」。</p><button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button><div><a class="backlink" href="../index.html">回課程首頁</a><a class="backlink" href="ch11-5.html">前往下一章：11-5 Merge、Pull Request 與 Conflict →</a></div></section>
+<section class="card"><span class="tag">重點整理</span><h2>讀完後應該能說清楚這四件事</h2><ol><li>Repository：保存專案檔案與版本歷史的儲存庫。</li><li>Commit／Branch：Commit 是一組變更；Branch 是隔離工作的版本線。</li><li>把多個無關修改塞進同一 Commit，審查與回復都會變難。</li><li>排查時先確認環境、版本與變更範圍，再分辨 Code、Configuration 與 Metadata。</li></ol></section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 1/4</span><h2>關於「Repository、Commit 與 Branch」，哪個說法正確？</h2><button class="opt" data-val="A" type="button">A. Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</button><button class="opt" data-val="B" type="button">B. Repository 沒有畫面錯誤，就代表 Commit／Branch 一定成功</button><button class="opt" data-val="C" type="button">C. Commit／Branch 失敗時可以直接重跑，不必保留 Repository 的輸入</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</div></div></section>
+
+  <section class="card quiz-card" data-answer="B"><span class="tag">檢核 2/4</span><h2>Repository 與 Commit／Branch 的差異，哪個說法最準確？</h2><button class="opt" data-val="A" type="button">A. Repository 與 Commit／Branch 是同一個處理步驟</button><button class="opt" data-val="B" type="button">B. 保存專案檔案與版本歷史的儲存庫；Commit 是一組變更；Branch 是隔離工作的版本線</button><button class="opt" data-val="C" type="button">C. 只要系統回傳成功，就不必記錄 Repository／Commit／Branch 的邊界</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>B</strong>。Repository 與 Commit／Branch 的處理邊界不同，不能互換。</div></div></section>
+
+  <section class="card quiz-card" data-answer="C"><span class="tag">檢核 3/4</span><h2>Northstar 的「Repository、Commit 與 Branch」出現異常，第一個應取得哪組證據？</h2><button class="opt" data-val="A" type="button">A. 只看 Repository 的最後畫面</button><button class="opt" data-val="B" type="button">B. 未檢查 Commit／Branch 就刪除失敗資料</button><button class="opt" data-val="C" type="button">C. 確認環境、版本與變更範圍，再保留時間、來源與結果</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>C</strong>。先確認環境、版本與變更範圍，才能判斷問題是否位於 Repository。</div></div></section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 4/4</span><h2>哪個做法最能降低「Repository」相關的誤判？</h2><button class="opt" data-val="A" type="button">A. 分辨 Code、Configuration 與 Metadata，並一次驗證一個假設</button><button class="opt" data-val="B" type="button">B. 同時修改 Repository 與 Commit／Branch 直到畫面恢復</button><button class="opt" data-val="C" type="button">C. 只保留最後一次 Commit／Branch 結果，不留原始紀錄</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。分辨 Code、Configuration 與 Metadata 後再驗證下一個假設，才能保留因果關係。</div></div></section>
+
+  <section class="card" id="finishCard"><span class="tag">本章完成</span><h2>辛苦了，本章讀完了</h2><p id="scoreText"></p><p>章末練習：</p><div class="bubble">如果今天就要把「Repository、Commit 與 Branch」寫進專案規格，您會先補上哪一項責任或驗證資訊？</div><p>下一章會接著學「Merge、Pull Request 與 Conflict」。</p><button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button><div><a class="backlink" href="../index.html">回課程首頁</a><a class="backlink" href="ch11-5.html">前往下一章：11-5 Merge、Pull Request 與 Conflict →</a></div></section>
 
 </div>
 

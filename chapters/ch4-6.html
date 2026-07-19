@@ -129,7 +129,7 @@
     <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-1、4-3 再來。</p>
     <p>前五章認識了資料的收納方式,這一章要學「開口跟資料庫要資料」的語言:SQL。放心,目標不是讓您寫出查詢,而是讓您<strong>看得懂</strong>工程師寫的簡單查詢——這在確認報表邏輯、排查資料問題時非常好用。</p>
     <ul>
-      <li>看懂 SELECT、WHERE、ORDER BY、GROUP BY 各自在做什麼。</li>
+      <li>說明 SELECT、WHERE、ORDER BY、GROUP BY 分別控制欄位、篩選、排序與分組。</li>
       <li>分辨「查資料」和「改資料」的指令,理解風險等級的差異。</li>
       <li>拿到一段簡單查詢時,能用中文說出它在問什麼。</li>
     </ul>
@@ -183,12 +183,12 @@ GROUP BY 客戶編號            ← 按客戶分組</pre>
     <table>
       <tr><th style="width:22%;">關鍵字</th><th>作用</th><th style="width:22%;">性質</th></tr>
       <tr><td><strong>SELECT</strong></td><td>指定要取出哪些欄位</td><td rowspan="4">查詢:只讀取,不改變資料</td></tr>
-      <tr><td><strong>WHERE</strong></td><td>設定篩選條件</td></tr>
-      <tr><td><strong>ORDER BY</strong></td><td>指定排序方式</td></tr>
+      <tr><td><strong>WHERE</strong></td><td>在回傳結果前，以布林條件篩選符合條件的資料列</td></tr>
+      <tr><td><strong>ORDER BY</strong></td><td>依一個或多個欄位排列查詢結果，可指定 ASC 升冪或 DESC 降冪</td></tr>
       <tr><td><strong>GROUP BY</strong></td><td>分組統計(搭配 SUM、COUNT 等)</td></tr>
       <tr><td><strong>INSERT</strong></td><td>新增一筆紀錄</td><td rowspan="3">異動:會真的改變資料,風險高</td></tr>
       <tr><td><strong>UPDATE</strong></td><td>修改既有紀錄的欄位值</td></tr>
-      <tr><td><strong>DELETE</strong></td><td>刪除紀錄</td></tr>
+      <tr><td><strong>DELETE</strong></td><td>刪除符合 WHERE 條件的資料列；省略 WHERE 會刪除表中所有資料列</td></tr>
     </table>
     <p>上下兩區的風險等級完全不同:SELECT 查一百次也不會弄壞資料;UPDATE 和 DELETE 一句下錯,幾萬筆資料就變了。這是這一章最重要的一條分界線。</p>
   </section>
