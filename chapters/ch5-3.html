@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-3 Duplicate 與 Matching — 重複資料是怎麼來的｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 5 ・ 第 3 章｜Duplicate 與 Matching — 重複資料是怎麼來的</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Duplicate 與 Matching<br>重複資料是怎麼來的</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 5-2。</p>
+    <p>客戶名單裡有「王小明」和「小明 王」，Email 也不一樣。這是兩位客戶，還是同一人留下的兩筆紀錄？電腦不會自己知道，顧問得先把判斷規則說清楚。</p>
+    <ul>
+      <li>理解 Duplicate 與 Matching 的差別。</li>
+      <li>知道 Email 為何不一定適合當唯一識別值。</li>
+      <li>能說明合併重複資料前必須保留哪些資訊。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「同一家公司，報表卻算成三個客戶」</h2>
+    <p>Northstar 的業務報表出現三筆看似相同的公司：</p>
+<pre>雲端商貿股份有限公司
+雲端商貿(股)公司
+Cloud Commerce Co., Ltd.</pre>
+    <div class="bubble">「名稱不一樣，可是電話和地址相同。可以直接合併嗎？萬一其實是總公司和子公司呢？」</div>
+    <p>看到相似資料只能說「可能重複」。要不要合併，還需要 Matching 規則和人工判斷。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>通訊錄裡的兩個「阿哲」</h2>
+    <p>手機通訊錄裡有兩個阿哲，一筆只有公司電話，另一筆只有手機。光看名字，您不能確定是不是同一人；若公司、職稱與 Email 也相同，把握才會提高。</p>
+    <p><strong>Duplicate（重複資料）</strong>是同一個現實對象被存成兩筆以上紀錄。<strong>Matching（比對）</strong>則是根據一組欄位與規則，判斷不同紀錄是否代表同一個對象。</p>
+    <div class="note"><span class="nt">先記住這句</span>Duplicate 是問題狀態；Matching 是用來找出疑似重複的方法。</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>只比 Email，會漏掉也會誤判</h2>
+    <p>同一個人可能用公司信箱註冊產品、用私人信箱訂閱電子報。若只看 Email，系統會把他當成兩個人。反過來，一家小公司可能共用 info@company.com；若把 Email 相同就當同一人，又會把不同聯絡人合併。</p>
+    <p>Email 很有用，卻不天然等於人的身分。比對通常要組合姓名、電話、公司、地址或內部識別碼，並考慮資料是否可能變動。</p>
+    <div class="note"><span class="nt">別急著合併</span>先定義「完全相同」「高度相似」和「需要人工確認」三種結果，再決定後續動作。</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>四個常用名詞</h2>
+    <table>
+      <tr><th style="width:28%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Duplicate</strong></td><td>同一個現實對象在資料集中出現兩筆以上紀錄</td></tr>
+      <tr><td><strong>Matching</strong></td><td>依欄位、規則或分數判斷兩筆紀錄是否代表同一對象</td></tr>
+      <tr><td><strong>Exact Match</strong></td><td>指定欄位的值完全相同，例如會員編號完全一致</td></tr>
+      <tr><td><strong>Fuzzy Match</strong></td><td>允許拼字、格式或順序差異的相似比對，例如公司名稱縮寫</td></tr>
+    </table>
+    <p>Matching 找到的是候選對象，不代表一定能自動 Merge（合併）。規則越寬鬆，抓到的候選越多，誤合併風險也越高。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一組重複資料怎麼被處理</h2>
+    <p>以兩筆疑似相同的客戶資料為例：</p>
+<pre>先用穩定識別碼做 Exact Match
+→ 沒比到，再比較姓名、電話、公司與地址
+→ 依規則算出相似程度
+→ 高信心：送入合併流程
+→ 中信心：交由 Data Steward 人工確認
+→ 低信心：保留為不同紀錄
+→ 合併時記錄來源、保留值與異動紀錄</pre>
+    <p>最後一步常被忽略。若合併後不知道值從哪裡來，日後發現誤合併就很難拆回去。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個會直接影響專案的場景</h2>
+    <h3>場景一：整併兩套客戶名單</h3>
+    <p>上線前不能只問「總共有幾筆」，還要問重複率、比對欄位、合併原則，以及無法確定的資料由誰確認。這些工作會直接影響時程。</p>
+    <h3>場景二：行銷人數與營收對不上</h3>
+    <p>同一人若有三筆紀錄，可能收到三封信；兩個人被誤合併，消費紀錄又會混在一起。報表異常未必是公式錯，資料身分也可能出了問題。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>比對規則要看資料特性</h2>
+    <h3>概念一：唯一識別值要穩定、唯一、可取得</h3>
+    <p>內部客戶 ID 通常比姓名穩定，但跨系統時未必共用同一組 ID。Email 可能更換、共用或缺漏，因此不一定能單獨當唯一識別值。</p>
+    <h3>概念二：先標準化，再比對</h3>
+    <p>「02-2345-6789」和「0223456789」其實是同一支電話。先去除格式差異，Matching 才不會把外觀不同誤判成內容不同。下一章會完整說明 Standardization。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>漏抓與誤合併之間要取捨</h2>
+    <h3>概念三：規則太嚴會漏掉，太鬆會抓錯</h3>
+    <p>要求姓名、電話、Email 全部相同，安全但容易漏掉改過電話的人；只要求姓名相同，又會把同名者混在一起。適合的門檻取決於用途與風險。</p>
+    <h3>概念四：合併要有保留規則</h3>
+    <p>確認為同一人後，還要決定哪一筆是主紀錄、各欄位保留哪個值、關聯的訂單與案件如何搬移。合併不是按一下刪除重複列。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>三組常被混在一起的概念</h2>
+    <table>
+      <tr><th>容易混淆</th><th>怎麼分</th></tr>
+      <tr><td>Duplicate vs Similar</td><td>相似只表示長得像；確認代表同一對象，才算重複</td></tr>
+      <tr><td>Matching vs Merging</td><td>Matching 找候選；Merging 決定並執行合併</td></tr>
+      <tr><td>Unique Field vs Reliable Identity</td><td>欄位設定成不重複，不代表它在現實世界永遠能代表同一個人</td></tr>
+    </table>
+    <p>看起來相似不等於可以合併。只要記住這點，就能避開最危險的誤判。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar 的客戶比對規則</h2>
+    <p>Northstar 先用一組保守規則找出候選資料：</p>
+<pre>規則 A：來源客戶 ID + 來源系統完全相同 → 同一筆來源資料
+規則 B：姓名標準化後相同 + 手機相同 → 高信心候選
+規則 C：公司 Email 相同 + 公司名稱相似 → 中信心候選
+規則 D：只有姓名相同 → 不自動合併</pre>
+    <ol>
+      <li><strong>角色：</strong>CRM 營運專員檢查候選，客戶資料 Owner 核定規則。</li>
+      <li><strong>資料流：</strong>候選清單先進人工審查，確認後才合併。</li>
+      <li><strong>可能出錯：</strong>共用公司信箱讓兩位聯絡人被判成同一人。</li>
+      <li><strong>第一個檢查方向：</strong>查看這次判定用了哪些欄位，以及原始值是否先被標準化。</li>
+    </ol>
+    <div class="note"><span class="nt">顧問可以先問</span>「判斷同一人的最低條件是什麼？不確定時由誰確認？」</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照（選讀）</span>
+    <h2>企業應用常見的重複管理</h2>
+    <p>不熟悉這些產品的話，這張卡片可以跳過。</p>
+    <table>
+      <tr><th>通用概念</th><th>常見做法</th></tr>
+      <tr><td>Duplicate Rule</td><td>在 CRM 建立規則，新增或更新時提醒、阻擋，或允許後續審查</td></tr>
+      <tr><td>Master Record</td><td>合併時指定一筆主紀錄，保留其他紀錄的關聯與必要欄位值</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個重複資料的陷阱</h2>
+    <h3>誤解一：「Email 一樣，就是同一個人」</h3>
+    <p>家庭或公司可能共用信箱。Email 相同是線索，不是所有情況下都可靠的身分證。</p>
+    <h3>誤解二：「名字不同，就一定不是同一人」</h3>
+    <p>中英文名、空白、順序與縮寫都會造成差異。需要先標準化，再搭配其他欄位判斷。</p>
+    <h3>誤解三：「找到重複就直接刪一筆」</h3>
+    <p>被刪紀錄可能連著訂單、同意狀態或客服案件。正確做法是設計合併與保留規則。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>疑似重複資料的五步檢查</h2>
+    <ol>
+      <li>確認討論的是人、公司、產品，還是其他資料對象。</li>
+      <li>查看每筆資料的來源系統、來源 ID 與建立時間。</li>
+      <li>把姓名、電話、地址等欄位先做格式標準化再比較。</li>
+      <li>檢查命中的 Matching 規則與信心門檻。</li>
+      <li>合併前確認主紀錄、欄位保留與關聯資料處理方式。</li>
+    </ol>
+    <p>前四步是在確認證據。證據還不夠時，保留兩筆通常比誤合併安全。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Duplicate 是同一對象有多筆紀錄；Matching 是找出疑似重複的方法。</li>
+      <li>Email 可能更換、共用或缺漏，不一定適合單獨當唯一識別值。</li>
+      <li>先標準化再比對，規則太嚴會漏抓，太鬆會誤合併。</li>
+      <li>合併前要決定主紀錄、欄位保留、關聯搬移與異動紀錄。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>Duplicate 與 Matching 的關係，哪個說法正確？</h2>
+    <button class="opt" data-val="A" type="button">A. 兩個詞都只是刪除資料</button>
+    <button class="opt" data-val="B" type="button">B. Duplicate 是問題狀態，Matching 是判斷方法</button>
+    <button class="opt" data-val="C" type="button">C. Matching 只適用於 Email 完全相同</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。重複是資料狀態；比對是依規則找出疑似重複。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 2/4</span>
+    <h2>為什麼 Email 不一定適合單獨當唯一識別值？</h2>
+    <button class="opt" data-val="A" type="button">A. 因為 Email 不能儲存在 CRM</button>
+    <button class="opt" data-val="B" type="button">B. 因為所有 Email 都會每天改變</button>
+    <button class="opt" data-val="C" type="button">C. 因為 Email 可能更換、共用或缺漏</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。同一人可能有多個信箱，不同人也可能共用信箱。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>「02-2345-6789」與「0223456789」在比對前最適合先做什麼？</h2>
+    <button class="opt" data-val="A" type="button">A. 統一電話格式後再比較</button>
+    <button class="opt" data-val="B" type="button">B. 直接判定為不同電話</button>
+    <button class="opt" data-val="C" type="button">C. 刪除兩筆資料</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。先去除格式差異，才能比較真正的內容。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>兩筆客戶資料只有姓名相同，其他欄位不足。第一步怎麼做較安全？</h2>
+    <button class="opt" data-val="A" type="button">A. 立刻自動合併</button>
+    <button class="opt" data-val="B" type="button">B. 保留為候選，補查來源與其他識別欄位</button>
+    <button class="opt" data-val="C" type="button">C. 刪除較舊的那筆</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。同名不代表同一人；先補證據，避免誤合併。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了，您已能拆解重複資料問題</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題：</p>
+    <div class="bubble">若兩筆客戶姓名和電話相同，但訂閱同意狀態不同，您會先查哪些來源再決定是否合併？</div>
+    <p>下一章會接著處理格式不一致、錯字、空白與過期值：資料清理與標準化。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch5-4.html">前往下一章：5-4 資料清理與標準化 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '5-3';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

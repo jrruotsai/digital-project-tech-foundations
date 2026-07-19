@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-4 Status Code｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 4 章｜Status Code — 系統回覆的暗號</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Status Code<br>系統回覆的暗號</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 2-2、2-3 再來。</p>
+    <p>您一定看過網頁跳出「404」或聽過工程師說「回傳 500」。這些三位數的數字,是 Server 在 Response 裡附上的「暗號」,告訴 Client 這次請求到底處理得怎麼樣。這一章要教您看懂最常見的幾個暗號。</p>
+    <ul>
+      <li>看懂 200、201、400、401、403、404、429、500 這幾個常見狀態碼的意思。</li>
+      <li>分辨「這是誰的問題」——是 Client 端的問題,還是 Server 端的問題。</li>
+      <li>拿到一個陌生的狀態碼時,知道大概該往哪個方向猜。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「畫面說 403,這是什麼意思?」</h2>
+    <p>Northstar Electronics 的客服人員想開啟某個內部系統頁面,畫面卻顯示了一段陌生的訊息,她拍了截圖傳給 IT:</p>
+    <div class="bubble">「畫面上寫著 403 Forbidden,這是系統壞了嗎?」</div>
+    <p>其實不是系統壞了。403 是 Server 明確告訴 Client:「我收到你的請求了,但我不允許你做這件事。」這跟「系統掛掉」是完全不同的狀況。這一章會教您把這些數字讀成一句話,而不是一串亂碼。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>信件回條上的簡短代號</h2>
+    <p>想像您寄了一封信,對方寄回一張回條,上面只印了一個代號,不同代號代表不同意思:「已收到並辦妥」「地址錯誤,查無此人」「這件事我不受理,禁止辦理」。您一看代號,不用看完整封信,就能知道大概發生了什麼事。</p>
+    <p>HTTP 的 <strong>Status Code(狀態碼)</strong>正是這樣的機制。Server 每次回傳 Response,都會附上一個三位數的代號,像 200、404、500,用最短的方式告訴 Client 這次請求的結果。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      狀態碼的第一位數字,是分類的關鍵:2 開頭表示成功,4 開頭表示「問題出在 Client 這邊」,5 開頭表示「問題出在 Server 這邊」。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>「你寫錯地址」和「我們家出事了」</h2>
+    <p>延續回條的比喻,4 開頭的代號,像是「您寫的地址有誤」「這裡禁止辦理這件事」——問題出在寄件人(Client)這邊,可能是地址寫錯、沒有權限辦這件事。5 開頭的代號,則像是「收件單位內部出了狀況,沒辦法處理您的信」——問題出在收件方(Server)自己身上,不是您的錯。</p>
+    <p>回到開頭客服人員遇到的 403。它屬於 4 開頭,代表問題出在「請求方這邊」——具體來說,是這位客服人員的帳號沒有被授權存取這個頁面,不是系統故障。正確的處理方式,是去確認她的帳號權限設定,而不是通報系統當機。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>常見狀態碼的正式說法</h2>
+    <table>
+      <tr><th style="width:16%;">狀態碼</th><th>意思</th><th style="width:26%;">誰的問題</th></tr>
+      <tr><td><strong>200</strong></td><td>成功,請求已正常處理</td><td>—</td></tr>
+      <tr><td><strong>201</strong></td><td>成功,而且新建立了一筆資料</td><td>—</td></tr>
+      <tr><td><strong>400</strong></td><td>請求的格式或內容有誤,Server 看不懂</td><td>Client 端</td></tr>
+      <tr><td><strong>401</strong></td><td>尚未通過身分驗證,需要先登入或提供正確憑證</td><td>Client 端</td></tr>
+      <tr><td><strong>403</strong></td><td>身分已確認,但沒有權限做這件事</td><td>Client 端</td></tr>
+      <tr><td><strong>404</strong></td><td>找不到這個網址對應的內容</td><td>Client 端</td></tr>
+      <tr><td><strong>429</strong></td><td>短時間內請求次數太多,被限制了</td><td>Client 端</td></tr>
+      <tr><td><strong>500</strong></td><td>Server 內部發生錯誤,無法正常處理</td><td>Server 端</td></tr>
+    </table>
+    <p>200 系列代表成功,不需要特別擔心;4 開頭需要先檢查 Client 端(是不是網址打錯、有沒有登入、有沒有權限);5 開頭則要請工程師去查 Server 端到底出了什麼狀況。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>同一個登入頁面,不同的狀態碼結果</h2>
+    <p>用一個登入場景,走一遍不同狀態碼可能出現的情境:</p>
+<pre>情境一:帳號密碼都對 → Server 回傳 200,登入成功,進入系統
+情境二:帳號密碼打錯   → Server 回傳 401,提示請重新輸入
+情境三:帳號已停用     → Server 回傳 403,即使密碼正確也拒絕登入
+情境四:網址打錯了     → Server 回傳 404,找不到這個頁面
+情境五:系統當機了     → Server 回傳 500,連處理請求的能力都出問題了</pre>
+    <p>五種情境,使用者看到的可能都是「登入失敗」,但背後的狀態碼完全不同,對應的解決方式也完全不同。這也是為什麼請使用者提供狀態碼或截圖,對排查問題非常有幫助。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:第一時間判斷問題方向</h3>
+    <p>使用者回報問題時,先問一句「畫面上有沒有出現數字或錯誤代碼?」如果是 4 開頭,可以先自行檢查帳號權限、網址是否正確;如果是 5 開頭,就該立刻通知工程師,因為問題出在系統本身。</p>
+    <h3>場景二:向客戶精準說明問題性質</h3>
+    <p>與其說「系統出錯了」,不如說「系統回傳 403,代表您的帳號目前沒有存取這個功能的權限」。這種說法能讓客戶清楚知道問題不是系統故障,而是權限設定需要調整,避免不必要的緊張。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>第一位數字,決定了大方向</h2>
+    <h3>概念一:2 開頭是成功,不用緊張</h3>
+    <p>200 和 201 都代表請求成功處理,差別只在 201 特別強調「這次還新建立了一筆資料」。看到 2 開頭,代表這段溝通本身沒有問題。</p>
+    <h3>概念二:4 開頭,先檢查請求方自己</h3>
+    <p>400、401、403、404、429 這些 4 開頭的狀態碼,共通點是「問題出在這次請求本身」——可能是格式錯誤、沒登入、沒權限、網址錯誤,或是請求太頻繁。看到 4 開頭,第一直覺應該是檢查請求端的設定,而不是懷疑系統壞了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>5 開頭,是系統自己說「我這邊有狀況」</h2>
+    <h3>概念三:5 開頭代表 Server 端出了問題</h3>
+    <p>500 這類狀態碼,代表 Server 在處理請求的過程中,自己發生了無法處理的錯誤。這不是使用者操作有誤造成的,而是系統本身需要工程師介入排查。</p>
+    <h3>概念四:狀態碼是溝通問題的共同語言</h3>
+    <p>不管是跟工程師、客戶 IT,還是原廠 Support 溝通,提供準確的狀態碼,遠比描述「畫面怪怪的」更有效率。這是顧問可以立刻開始使用、幾乎零成本的溝通升級。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>401 vs 403</td><td>401 是「還不知道你是誰」,通常代表需要先登入或提供正確憑證;403 是「已經知道你是誰,但不允許你做這件事」,通常代表權限不足。前者先解決身分驗證,後者要調整權限設定。</td></tr>
+      <tr><td>4 開頭 vs 5 開頭</td><td>4 開頭是請求本身有問題(格式、身分、權限、網址、頻率);5 開頭是 Server 自己處理時發生錯誤。前者先檢查請求端,後者要交給工程師查 Server。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的 API 串接異常</h2>
+    <p>Northstar 的行銷平台每天定時呼叫 CRM System 的 API,同步最新的客戶名單。某天開始,同步作業持續失敗:</p>
+<pre>錯誤紀錄:連續多次呼叫都回傳 429
+時間點:剛好是行銷平台換了新的排程頻率,從每小時一次改成每五分鐘一次
+CRM System 的說明文件:針對這個 API,限制每小時最多呼叫 10 次</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>行銷平台(呼叫方,Client)、CRM System(被呼叫方,Server)。</li>
+      <li><strong>資料如何移動?</strong>行銷平台定期發送請求給 CRM System,要求提供最新客戶資料。</li>
+      <li><strong>各系統負責什麼?</strong>CRM System 為了保護自己的服務品質,對每個呼叫方設定了頻率限制。</li>
+      <li><strong>哪裡可能出錯?</strong>行銷平台把排程頻率改得太高,超過了 CRM System 允許的呼叫次數上限。</li>
+      <li><strong>第一個合理的檢查方向?</strong>看到 429,第一步就該去查這個 API 的呼叫頻率限制文件,確認最近有沒有調整過排程設定,而不是懷疑 CRM System 故障。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 API 串接裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:26%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>401</td><td>呼叫 Salesforce API 時,Access Token(存取權杖)過期或缺失</td></tr>
+      <tr><td>403</td><td>Salesforce 使用者的個人資料存取層級不足,無法讀取某個欄位</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「畫面出現數字錯誤代碼,一定是系統壞了」</h3>
+    <p>4 開頭的狀態碼通常代表請求本身有問題,不是系統故障。先看清楚是哪個數字,再判斷該往哪個方向排查。</p>
+    <h3>誤解二:「401 和 403 是一樣的意思」</h3>
+    <p>401 是身分還沒確認,403 是身分已確認但權限不足。兩者的解決方式不同:前者要處理登入或憑證,後者要調整權限設定。</p>
+    <h3>誤解三:「狀態碼是 200 就代表整個流程都成功了」</h3>
+    <p>200 只代表這一次 Request/Response 的溝通本身成功,不代表後續所有處理都完美無誤。就像 1-1 教過的:畫面顯示成功,不保證資料真的完整落地,狀態碼也是類似的道理——它只回答「這次溝通有沒有順利完成」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「系統出現錯誤代碼」的檢查順序</h2>
+    <ol>
+      <li><strong>先看清楚具體是哪個狀態碼。</strong>請使用者提供截圖或完整訊息。</li>
+      <li><strong>判斷是 4 開頭還是 5 開頭。</strong>決定接下來該檢查請求端還是系統端。</li>
+      <li><strong>如果是 4 開頭,先確認網址、身分驗證、權限是否正確。</strong>這些通常顧問自己就能初步排查。</li>
+      <li><strong>如果是 5 開頭,立刻通知工程師查看 Server 端的錯誤紀錄。</strong>這類問題通常需要技術人員介入。</li>
+      <li><strong>把狀態碼和發生時間一併提供給處理的人。</strong>這能大幅縮短排查時間。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Status Code 是 Server 附在 Response 裡的三位數暗號,快速說明這次請求的處理結果。</li>
+      <li>2 開頭代表成功;4 開頭代表問題出在請求方(格式、身分、權限、頻率);5 開頭代表問題出在 Server 自己身上。</li>
+      <li>401 是身分未確認,403 是身分確認但權限不足,兩者處理方式不同。</li>
+      <li>提供準確的狀態碼給工程師或客戶,遠比描述「畫面怪怪的」更有效率。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>使用者已經登入成功,但嘗試存取一個沒有權限的頁面,最可能收到哪個狀態碼?</h2>
+    <button class="opt" data-val="A" type="button">A. 200</button>
+    <button class="opt" data-val="B" type="button">B. 403</button>
+    <button class="opt" data-val="C" type="button">C. 500</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。403 代表身分已經確認,但沒有權限做這件事,正是這個情境的典型狀態碼。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:狀態碼 500 代表問題出在 Server 端,不是使用者操作有誤。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。500 代表 Server 內部處理請求時發生錯誤,問題出在系統本身,需要工程師介入排查。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>某個排程作業在短時間內對同一個 API 呼叫太多次,最可能收到哪個狀態碼?</h2>
+    <button class="opt" data-val="A" type="button">A. 201</button>
+    <button class="opt" data-val="B" type="button">B. 404</button>
+    <button class="opt" data-val="C" type="button">C. 429</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。429 代表短時間內請求次數太多,被系統限制了,這是排程頻率設定過高時常見的狀態碼。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶說畫面顯示「404」。您的第一個合理懷疑方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 網址是否正確,或這個頁面是否真的存在</button>
+    <button class="opt" data-val="B" type="button">B. Server 的硬體設備壞掉了</button>
+    <button class="opt" data-val="C" type="button">C. 使用者的網路速度太慢</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。404 代表找不到這個網址對應的內容,通常是網址打錯、頁面被移除或連結失效,問題出在請求方這一端要先確認的細節。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有遇過使用者回報「系統出錯」,後來發現只是狀態碼 401 或 403 這類權限問題,不是真的系統故障?</div>
+    <p>下一章我們會教 HTTPS、Certificate 與安全傳輸——網址前面那個小鎖頭圖示,到底在保護什麼。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-5.html">前往下一章：2-5 HTTPS、Certificate 與安全傳輸 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-4';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

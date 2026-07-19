@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-6 Sync Direction 與 Conflict Resolution — 雙向同步的衝突｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 5 ・ 第 6 章｜Sync Direction 與 Conflict Resolution — 雙向同步的衝突</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active"><span class="tag">歡迎回來</span><h2>Sync Direction 與 Conflict Resolution<br>雙向同步的衝突</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 5-5。</p><p>欄位接好了，接著要畫箭頭。CRM 改電話後要送到行銷平台；行銷平台也能改電話嗎？兩邊同時改成不同值時，哪一個留下？沒先回答，整合上線後就會出現資料來回覆蓋。</p><ul><li>分辨單向、雙向與依欄位分流。</li><li>理解衝突如何發生。</li><li>能說出常見的 Conflict Resolution 規則。</li></ul>
+  </section>
+
+  <section class="card"><span class="tag">情境</span><h2>「我改對了，隔天怎麼又變回去？」</h2>
+    <p>客服在 CRM 把電話改成新號碼。幾分鐘後，行銷平台把舊電話同步回 CRM；夜間批次又把 CRM 的值送過去。兩個系統輪流覆蓋，誰也說不清最後會留下哪一支。</p><div class="bubble">「同步不是應該讓資料一致嗎？為什麼越同步越亂？」</div><p>同步只負責搬資料。方向和衝突規則沒定，搬得越勤快，錯誤傳得越快。</p>
+  </section>
+
+  <section class="card"><span class="tag">情境例子 1/2</span><h2>公告欄和個人筆記</h2>
+    <p>公司公告欄是正式版本，個人筆記只是抄本。公告更新後可以抄到筆記；筆記不該反過來覆蓋公告。</p><p>這是<strong>單向同步</strong>：資料由 System of Record 流向副本。規則簡單，衝突也少。</p><div class="note"><span class="nt">先畫箭頭</span>每個欄位都要知道誰能寫、資料從哪裡流向哪裡。</div>
+  </section>
+
+  <section class="card"><span class="tag">情境例子 2/2</span><h2>兩個人同時改同一份行程表</h2>
+    <p>如果兩人都能改行程表，一人改成十點，另一人改成十一點，系統必須決定保留哪個。只說「取最新」還不夠：兩台電腦的時間可能不同，晚寫入的也未必較正確。</p><p><strong>Conflict Resolution</strong> 是兩個來源對同一資料提出不同值時，用來決定保留值的規則。</p><div class="note"><span class="nt">雙向同步的代價</span>它需要衝突偵測、仲裁規則、重試與紀錄，維護成本通常高於單向同步。</div>
+  </section>
+
+  <section class="card"><span class="tag">正式定義</span><h2>五個同步名詞</h2>
+    <table><tr><th>名詞</th><th>定義</th></tr><tr><td><strong>Sync Direction</strong></td><td>資料在系統間允許流動的方向</td></tr><tr><td><strong>One-way Sync</strong></td><td>只有來源能更新目標</td></tr><tr><td><strong>Bi-directional Sync</strong></td><td>兩邊的變更都可能傳到對方</td></tr><tr><td><strong>Conflict</strong></td><td>同一資料在不同來源出現互斥的變更</td></tr><tr><td><strong>Conflict Resolution</strong></td><td>偵測衝突並選擇、合併或人工確認結果的規則</td></tr></table>
+  </section>
+
+  <section class="card"><span class="tag">串起來看</span><h2>一場雙向衝突怎麼發生</h2>
+    <pre>09:00 CRM 電話改為 0912（尚未同步）
+09:01 行銷平台電話改為 0933（尚未同步）
+09:05 整合讀到兩邊都比上次同步新
+→ 偵測到 Conflict
+→ 查 Field Ownership：電話由 CRM 負責
+→ 保留 0912，寫入行銷平台
+→ 記錄被捨棄的 0933、來源、時間與規則
+→ 必要時通知 Data Steward 複核</pre>
+  </section>
+
+  <section class="card"><span class="tag">為什麼要學這個</span><h2>兩個設計會議一定會問的問題</h2>
+    <h3>整合範圍確認</h3><p>「雙向同步」不能只寫一行。要拆到欄位：姓名從哪邊來、訂閱狀態誰能改、刪除是否也同步。</p><h3>異常回報</h3><p>使用者說資料被改回去時，先查同步方向、欄位責任與最後更新來源。這比先重跑工作有效。</p>
+  </section>
+
+  <section class="card"><span class="tag">核心概念 1/2</span><h2>單向優先，雙向要有理由</h2>
+    <h3>概念一：System of Record 決定主要方向</h3><p>5-1 已指定正本，預設應由正本流向副本。副本若需要回寫，要說明哪些欄位、哪些情境例外。</p><h3>概念二：方向可以按欄位不同</h3><p>CRM 負責電話，行銷平台負責訂閱狀態。兩個系統之間不一定是一支雙向箭頭，而是兩支分別代表不同欄位的單向箭頭。</p>
+  </section>
+
+  <section class="card"><span class="tag">核心概念 2/2</span><h2>衝突規則不能只靠時間</h2>
+    <h3>概念三：常見仲裁方式</h3><p>依 System of Record、Field Ownership、明確優先序或人工審查。Last Write Wins 只適合能接受覆蓋風險的資料。</p><h3>概念四：重試也可能製造重複覆蓋</h3><p>同步失敗後重試，若沒有版本號或去重機制，舊事件可能晚到並蓋掉新值。處理順序要納入設計。</p>
+  </section>
+
+  <section class="card"><span class="tag">容易混淆</span><h2>三組同步概念</h2>
+    <table><tr><th>概念</th><th>怎麼分</th></tr><tr><td>方向 vs 排程</td><td>方向說資料往哪走；排程說多久搬一次</td></tr><tr><td>同步失敗 vs 資料衝突</td><td>前者是沒搬成功；後者是兩邊都有不同的有效變更</td></tr><tr><td>最新值 vs 正確值</td><td>時間較新不保證符合業務規則</td></tr></table><p>遇到「資料不一致」，先分清楚是尚未同步、同步失敗，還是真的衝突。</p>
+  </section>
+
+  <section class="card"><span class="tag">案例</span><h2>Northstar 的欄位同步矩陣</h2>
+    <table><tr><th>欄位</th><th>正本</th><th>方向</th><th>衝突規則</th></tr><tr><td>電話</td><td>CRM</td><td>CRM → Marketing</td><td>CRM 優先</td></tr><tr><td>訂閱狀態</td><td>Marketing</td><td>Marketing → CRM</td><td>退訂優先</td></tr><tr><td>訂單金額</td><td>ERP</td><td>ERP → CRM</td><td>CRM 不允許修改</td></tr></table><p>團隊把原本一支「CRM ↔ Marketing」箭頭拆開後，才發現訂閱狀態不該由 CRM 回寫。</p><div class="note"><span class="nt">第一個好問題</span>「哪個欄位由哪個系統負責寫？另一邊是唯讀嗎？」</div>
+  </section>
+
+  <section class="card"><span class="tag">延伸對照（選讀）</span><h2>企業整合常見的控制方式</h2>
+    <p>不用的話可以跳過。</p><table><tr><th>控制方式</th><th>用途</th></tr><tr><td>Last Modified Time</td><td>找出變更，但要注意時區與時鐘差異</td></tr><tr><td>Version Number</td><td>偵測讀取後資料是否又被別人更新</td></tr><tr><td>Source System / Updated By</td><td>追查哪個系統或使用者改了值</td></tr><tr><td>Dead-letter Queue</td><td>保存多次重試仍失敗的事件，供後續處理</td></tr></table>
+  </section>
+
+  <section class="card"><span class="tag">常見誤解</span><h2>三個同步設計陷阱</h2>
+    <h3>誤解一：「雙向比較完整」</h3><p>雙向只是讓兩邊都能改，並不自動代表設計較好。責任不清時反而更危險。</p><h3>誤解二：「最新時間一定贏」</h3><p>時間可能不準，較新的值也可能是誤改。業務責任通常比時間更可靠。</p><h3>誤解三：「同步成功就沒有問題」</h3><p>技術上成功寫入，不代表寫入的是正確值。還要看方向與仲裁規則。</p>
+  </section>
+
+  <section class="card"><span class="tag">遇到問題先查什麼</span><h2>資料被改回去時的五步</h2>
+    <ol><li>確認欄位的 System of Record 與 Field Owner。</li><li>查看兩邊的值、更新時間、更新者與來源系統。</li><li>檢查同步方向、排程及最近一次成功紀錄。</li><li>確認是否發生重試、延遲事件或雙邊同時修改。</li><li>依衝突規則修正，並保留被覆蓋值與處理紀錄。</li></ol><p>前兩步常能立即看出使用者是不是改到了副本。</p>
+  </section>
+
+  <section class="card"><span class="tag">重點整理</span><h2>帶走這四句話</h2>
+    <ol><li>同步方向要拆到欄位，不能只畫系統之間的一支箭頭。</li><li>System of Record 與 Field Ownership 是決定方向的主要依據。</li><li>雙向同步需要衝突偵測、仲裁、重試與稽核紀錄。</li><li>最新值不一定正確；能用單向解決，就不要把雙向當預設。</li></ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="C"><span class="tag">檢核 1/4</span><h2>哪一種設計的衝突風險通常最低？</h2>
+    <button class="opt" data-val="A" type="button">A. 所有欄位都雙向同步</button>
+    <button class="opt" data-val="B" type="button">B. 任何系統都能覆蓋正本</button>
+    <button class="opt" data-val="C" type="button">C. 由 System of Record 單向同步到副本</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>C</strong>。單向且責任清楚，較不容易出現互相覆蓋。</div></div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 2/4</span><h2>CRM 管電話，行銷平台管訂閱狀態。最合適的設計是？</h2>
+    <button class="opt" data-val="A" type="button">A. 電話 CRM → Marketing；訂閱 Marketing → CRM</button>
+    <button class="opt" data-val="B" type="button">B. 兩個欄位都只看最後更新時間</button>
+    <button class="opt" data-val="C" type="button">C. 兩邊都不能同步</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。方向可以按欄位分開，不必把整套系統視為同一方向。</div></div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B"><span class="tag">檢核 3/4</span><h2>Last Write Wins 最大的風險是什麼？</h2>
+    <button class="opt" data-val="A" type="button">A. 永遠不會同步</button>
+    <button class="opt" data-val="B" type="button">B. 較新的值可能是誤改，時間也可能不一致</button>
+    <button class="opt" data-val="C" type="button">C. 只能處理圖片</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>B</strong>。時間只能描述先後，不能保證業務正確性。</div></div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 4/4</span><h2>使用者說「電話隔天又變回去」，第一步查什麼？</h2>
+    <button class="opt" data-val="A" type="button">A. 該欄位正本、同步方向與最後更新來源</button>
+    <button class="opt" data-val="B" type="button">B. 重新安裝瀏覽器</button>
+    <button class="opt" data-val="C" type="button">C. 先刪除客戶資料</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。這三項最能判斷是否改到副本或被同步規則覆蓋。</div></div>
+  </section>
+
+  <section class="card" id="finishCard"><span class="tag">本章完成</span><h2>辛苦了，您已能看懂同步箭頭</h2><p id="scoreText"></p><p>留一個小小的思考題：</p><div class="bubble">若客戶 Email 可在客服與會員中心修改，您會用什麼規則處理兩邊同時更新？</div><p>下一批會處理空白值、欄位責任，以及同意、保存期限與資料分類。</p><button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button><div><a class="backlink" href="../index.html">回課程首頁</a><a class="backlink" href="ch5-7.html">前往下一章：5-7 Null Handling 與 Field Ownership →</a></div></section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '5-6';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

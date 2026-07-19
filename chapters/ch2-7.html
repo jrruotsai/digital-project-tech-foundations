@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-7 Cache 與 CORS｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 7 章｜Cache 與 CORS — 為什麼畫面是舊的／請求被擋掉</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Cache 與 CORS<br>為什麼畫面是舊的／請求被擋掉</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-2、2-2 再來。</p>
+    <p>1-2 提過 Browser 會暫存舊內容,這一章要正式講清楚這個機制,還會教一個常讓工程師頭痛的詞:CORS。這兩個概念常常一起出現在「畫面怪怪的」這類回報裡。</p>
+    <ul>
+      <li>說明 Cache 造成的常見假象。</li>
+      <li>用白話理解 CORS 在防範什麼。</li>
+      <li>看到「這是 CORS 問題」時,知道大概是怎麼回事。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「我們明明改了網站內容,客戶看到的還是舊的」</h2>
+    <p>Northstar Electronics 更新了官網的產品價格,行銷同仁隔天收到反映:</p>
+    <div class="bubble">「客戶說看到的價格還是舊的,但我們自己這邊看起來是新的,是不是資料庫沒更新成功?」</div>
+    <p>先別急著懷疑資料庫。這個現象十之八九跟 1-2 提過的 Cache(快取)有關——客戶的瀏覽器,拿著舊版本的頁面內容重複使用,沒有跟 Server 要最新的版本。這一章要把這個機制講透。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>抄一份筆記,下次直接看筆記</h2>
+    <p>想像您每次要用某份資料,都得跑一趟很遠的圖書館去借。為了省時間,您第一次借到之後,乾脆抄一份筆記留在身邊,下次要用就直接看筆記,不用再跑一趟。</p>
+    <p><strong>Cache(快取)</strong>就是這份「隨身筆記」。Browser 第一次向 Server 要某個網頁內容時,會把它暫存一份在本機;下次再造訪同一個網址,如果判斷這份筆記還「夠新」,就直接顯示筆記內容,不用重新跑一趟去問 Server。這樣做的好處是網頁開得更快,壞處就是筆記可能已經過時,而您沒發現。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Cache 是為了「更快」而暫存的舊筆記。它的存在,天生就帶著「資料可能不是最新的」這個風險。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>不同店家借東西,得先問過對方願不願意借</h2>
+    <p>現在換個場景。假設 Northstar 的官網,想直接向另一個完全不同網域的系統要資料來顯示在自己頁面上。這時候瀏覽器會有一層安全機制介入:它會先確認「這個資料的提供方,有沒有同意讓我這個網域的網站來拿?」</p>
+    <p>這就像您想跟隔壁店家借工具,店家會先確認「我認識你這家店嗎?我允許嗎?」如果對方沒有明確同意,即使東西就在那裡,瀏覽器也會擋下這次請求,不讓資料被拿走。這道安全機制,叫做 <strong>CORS(Cross-Origin Resource Sharing,跨來源資源共享)</strong>。</p>
+    <p>CORS 不是在防普通使用者,而是瀏覽器在保護「未經同意,一個網站不能任意向另一個網站要資料」這條防線。如果 Server 端沒有正確設定「我同意讓這些網域來要資料」,即使資料本身沒有問題,瀏覽器也會主動擋下,這在工程師之間常被簡稱為「CORS 錯誤」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:20%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Cache<br>快取</strong></td><td>Browser(或其他中間節點)暫存的資料副本,用來加快下次存取同樣內容的速度</td></tr>
+      <tr><td><strong>CORS</strong></td><td>瀏覽器的安全機制,限制網頁只能向明確授權的其他網域請求資料,防止未經同意的跨網域資料存取</td></tr>
+    </table>
+    <p>兩者看似不相關,但都跟「瀏覽器如何處理跨頁面、跨網域的請求」有關,也都是排查「畫面怪怪的」或「資料要不到」時,常被提到的關鍵字。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一次網頁載入,Cache 和 CORS 各自登場的時機</h2>
+<pre>情境一(Cache):
+使用者造訪 northstar-electronics.com
+→ Browser 檢查本機是否已有這個網址的快取
+→ 如果有,且判斷還夠新鮮,直接顯示快取內容(不問 Server)
+→ 如果沒有,或已過期,才向 Server 要最新內容
+
+情境二(CORS):
+northstar-electronics.com 的頁面,想跟另一個網域 api.partner.com 要資料
+→ Browser 先確認 api.partner.com 是否同意讓這個網域請求資料
+→ 同意,才把資料交給頁面顯示;不同意,直接擋下,並回報 CORS 錯誤</pre>
+    <p>兩種情境都發生在 Browser 這一層,跟 2-2 教過的 Request/Response 息息相關,只是分別在處理「要不要重新問一次」和「能不能跨網域問」這兩個不同的問題。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:判斷「畫面沒更新」是不是 Cache 造成的</h3>
+    <p>客戶反映「內容還是舊的」,先請對方試著強制重新整理頁面(通常是按住特定按鍵再重新整理),如果這樣就恢復正常,代表原因就是 Cache,而不是後端資料真的沒更新。這能省下大量往資料庫方向排查的時間。</p>
+    <h3>場景二:理解跨系統整合時,CORS 是常被卡住的一關</h3>
+    <p>如果專案需要讓某個網頁直接向另一個系統要資料(而不是透過後端中轉),CORS 設定是否正確,是工程師常常需要事先確認的細節。提早知道這個概念,能在需求討論階段就提醒工程師留意。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>Cache 讓「快」和「新」之間有取捨</h2>
+    <h3>概念一:Cache 存在多個層級,不是只有 Browser</h3>
+    <p>除了使用者的 Browser,網路路徑中間的一些節點,也可能暫存內容(這超出本章要深入的範圍,先知道 Cache 不是只發生在使用者自己的電腦上即可)。這也是為什麼有時候即使清了自己的瀏覽器快取,問題依然存在。</p>
+    <h3>概念二:「強制重新整理」是排查 Cache 問題最簡單的第一步</h3>
+    <p>大多數瀏覽器都有「不使用快取、直接跟 Server 要最新內容」的重新整理方式。這是判斷問題是否為 Cache 造成的,成本最低的檢查手段。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>CORS 是保護機制,不是系統故障</h2>
+    <h3>概念三:CORS 錯誤代表安全機制正常運作,不是系統壞掉</h3>
+    <p>看到 CORS 錯誤,代表瀏覽器正確地執行了它該做的保護動作——擋下一次未經授權的跨網域請求。要解決它,通常是請提供資料的那一方,在自己的設定裡明確同意讓對方網域存取,而不是想辦法繞過這道機制。</p>
+    <h3>概念四:CORS 只在「跨網域」時才會介入</h3>
+    <p>如果 Request 是發給自己所在的同一個網域,不會觸發 CORS 的檢查。只有當網頁想跟不同網域的系統要資料時,才會遇到這道關卡,這也是為什麼許多內部串接不會遇到 CORS 問題,只有對外部系統的整合才容易碰上。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Cache 問題 vs 資料庫沒更新</td><td>Cache 問題通常只影響「看到的畫面」,強制重新整理就能驗證;資料庫沒更新則是資料本身真的還沒改變,重新整理也不會有幫助。用強制重新整理測試,能快速分辨兩者。</td></tr>
+      <tr><td>CORS 錯誤 vs 一般的網路連線失敗</td><td>CORS 錯誤是瀏覽器主動擋下的安全機制,通常訊息裡會明確提到 CORS 或跨來源相關字眼;一般連線失敗則是根本連不上,兩者的錯誤訊息和排查方向不同。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的價格更新事件</h2>
+    <p>追查客戶反映「價格還是舊的」問題,發現:</p>
+<pre>Northstar 端:資料庫的價格已經正確更新,後端回傳的內容也是正確的
+客戶端:瀏覽器暫存了舊版頁面,還沒有向 Server 要最新內容
+驗證方式:請該客戶強制重新整理頁面,結果立刻顯示正確的新價格</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>官網後端與資料庫(Northstar 端)、客戶的 Browser(Client 端)。</li>
+      <li><strong>資料如何移動?</strong>資料庫和後端內容其實已經正確,只是客戶的 Browser 還在使用本機暫存的舊版本。</li>
+      <li><strong>各部分負責什麼?</strong>Cache 機制原本的目的是加快網頁載入速度,但也帶來了「顯示內容可能落後」的副作用。</li>
+      <li><strong>哪裡可能出錯?</strong>如果第一時間就往資料庫方向排查,反而會浪費時間,因為問題根本不在那裡。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先請客戶強制重新整理頁面,這個動作幾乎零成本,卻能立刻排除或確認 Cache 是否為原因。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在系統整合裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>Cache</td><td>行銷平台的活動頁面更新後,CDN(內容傳遞網路)快取需要一段時間才會刷新到全球節點</td></tr>
+      <tr><td>CORS</td><td>企業官網的前端要直接呼叫第三方 API(例如地圖服務)時,需要對方明確開放 CORS 設定</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「畫面沒更新,一定是後端或資料庫的問題」</h3>
+    <p>Cache 是造成這類現象非常常見的原因,而且驗證成本很低——先請使用者強制重新整理,再往其他方向排查。</p>
+    <h3>誤解二:「CORS 錯誤代表網路壞了」</h3>
+    <p>CORS 錯誤代表瀏覽器主動擋下了一次跨網域請求,通常是設定沒有正確開放授權,不是網路本身有問題。</p>
+    <h3>誤解三:「CORS 問題可以靠使用者端解決」</h3>
+    <p>CORS 的授權設定,必須由提供資料的那一方(Server)去開放,使用者或前端這一側通常無法自行繞過或修正這個限制。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「畫面沒更新」或「資料要不到」的檢查順序</h2>
+    <ol>
+      <li><strong>先請使用者強制重新整理頁面。</strong>如果內容恢復正常,原因就是 Cache。</li>
+      <li><strong>確認是否為跨網域的請求。</strong>如果錯誤訊息提到跨來源或 CORS 字眼,方向就對了。</li>
+      <li><strong>確認是否只有部分使用者受影響。</strong>Cache 問題通常因人而異,取決於各自瀏覽器暫存的內容。</li>
+      <li><strong>如果排除 Cache,再確認後端資料本身是否正確。</strong>這時才需要往資料庫或後端邏輯排查。</li>
+      <li><strong>如果是 CORS 問題,請工程師確認提供資料的一方是否已正確開放授權設定。</strong></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Cache 是 Browser 暫存的舊內容,目的是加快載入速度,代價是可能顯示過時的資料。</li>
+      <li>CORS 是瀏覽器的安全機制,擋下未經授權的跨網域資料請求。</li>
+      <li>「畫面沒更新」先懷疑 Cache,強制重新整理是成本最低的驗證方式。</li>
+      <li>CORS 錯誤代表安全機制正常運作,解法是請資料提供方正確開放授權,不是想辦法繞過去。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>Browser 暫存資料以加快下次載入速度的機制,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. CORS</button>
+    <button class="opt" data-val="B" type="button">B. Cache</button>
+    <button class="opt" data-val="C" type="button">C. Cookie</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。Cache(快取)是暫存的資料副本,用來加快下次存取同樣內容的速度。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:CORS 錯誤代表瀏覽器的安全機制正常運作,不代表系統故障。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,CORS 錯誤就是系統壞了</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。CORS 錯誤代表瀏覽器主動擋下了一次未經授權的跨網域請求,是安全機制在正常運作,不是系統故障。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>客戶反映網頁內容還是舊版本,最低成本的第一個驗證方式是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 請工程師重新檢查資料庫</button>
+    <button class="opt" data-val="B" type="button">B. 請客戶換一台電腦</button>
+    <button class="opt" data-val="C" type="button">C. 請客戶強制重新整理頁面</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。強制重新整理能讓瀏覽器不使用快取、直接向 Server 要最新內容,是驗證 Cache 是否為原因,成本最低的第一步。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:工程師說「這是 CORS 問題」。正確的解決方向是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 請使用者換一個瀏覽器就能繞過</button>
+    <button class="opt" data-val="B" type="button">B. 請提供資料的那一方,正確開放授權設定,允許這個網域存取</button>
+    <button class="opt" data-val="C" type="button">C. 重新啟動使用者的電腦</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。CORS 的授權設定必須由提供資料的一方調整,使用者端無法自行繞過,也不是單純重開機能解決的問題。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有遇過「畫面沒更新」最後發現是 Cache 造成的經驗?當時花了多久才找到真正的原因?</div>
+    <p>下一章是單元 2 的最後一章,我們會實際打開瀏覽器的 Network 工具,親眼看一次 Request 長什麼樣子。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-8.html">前往下一章：2-8 使用 Browser Network 觀察 Request →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-7';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

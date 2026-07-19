@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-8 Index、View 與 Stored Procedure｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 8 章｜Index、View 與 Stored Procedure — 資料庫的三個常見名詞</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Index、View 與 Stored Procedure<br>資料庫的三個常見名詞</h2>
+    <p class="lead">預估 30 分鐘 ・ 單元 4 的最後一章,建議先讀完 4-6 再來。</p>
+    <p>這一章像一趟收尾的導覽:三個工程師常掛嘴邊、顧問常聽得一頭霧水的資料庫名詞,一次認識。另外還會補上兩個小概念:Transaction 和 Schema。目標不是操作它們,而是聽到時知道對方在說什麼。</p>
+    <ul>
+      <li>用一句話說明 Index、View、Stored Procedure 各自的用途。</li>
+      <li>理解「查詢很慢」和 Index 的關係。</li>
+      <li>理解 Transaction「全有或全無」的概念。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「工程師說:加個索引就會快了」</h2>
+    <p>Northstar Electronics 的客服系統,查詢客戶歷史紀錄越來越慢,一查要十幾秒。反映給工程師後,得到一句:</p>
+    <div class="bubble">「喔,那張表沒建索引,查詢都在全表掃描。我加個 Index 就會快了。」</div>
+    <p>隔天,同樣的查詢變成不到一秒。到底發生了什麼魔法?「全表掃描」又是什麼?這一章用一本書的比喻,讓您聽懂這段對話。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>沒有目錄的書,只能一頁一頁翻</h2>
+    <p>想像一本一千頁的百科全書,您要找「北極熊」的條目。如果書末有<strong>索引頁</strong>(按筆畫排好,標著每個詞在第幾頁),翻兩下就找到;如果沒有,您只能從第一頁開始逐頁翻——這就是工程師說的<strong>全表掃描(Full Table Scan)</strong>。</p>
+    <p><strong>Index(索引)</strong>就是資料表的「索引頁」:針對某個欄位(例如客戶編號)預先建好排序好的查找結構,查詢時直接跳到目標,不用逐筆翻。幾十萬筆的表,有沒有索引,查詢速度可以差上百倍——這就是「加個 Index 就快了」的原理。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Index 是欄位的目錄,讓查詢不用逐筆翻。查詢慢,第一個常見嫌疑就是「查詢條件用到的欄位沒建索引」。
+    </div>
+    <p>那為什麼不每個欄位都建?因為目錄本身要維護:每新增一筆資料,所有相關的索引頁都要跟著更新。索引越多,寫入越慢、佔空間越多。建哪些索引,是查詢速度與寫入成本之間的取捨,由工程師依實際查詢模式判斷。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>存好的視角,和存好的流程</h2>
+    <p>另外兩個名詞,也各有一個貼切的比喻:</p>
+    <p><strong>View(檢視表)</strong>像「存好的查詢視角」。4-7 那種接了三張表、條件複雜的查詢,如果每個人都要重寫一遍,既麻煩又容易寫得不一致。工程師可以把它存成一個 View,取名「VIP訂單總覽」,之後大家直接查這個名字,像查一張普通的表——但它背後其實是即時執行那段查詢。View 本身通常不存資料,它是一面「透鏡」。</p>
+    <p><strong>Stored Procedure(預存程序)</strong>像「存在資料庫裡的標準作業流程」。例如「月底結帳」要依序做十個步驟,工程師把整套流程寫好、存進資料庫,取名 MonthlyClose。之後每個月只要「呼叫」這個名字,十個步驟就照順序執行。它跟 View 的差別:View 是「存好的查詢」,Stored Procedure 是「存好的一連串動作」,裡面可以包含新增、修改等異動。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>五個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:28%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Index<br>索引</strong></td><td>針對欄位預先建立的查找結構,加速查詢,但增加寫入與儲存成本</td></tr>
+      <tr><td><strong>View<br>檢視表</strong></td><td>預先定義、以名字保存的查詢;查它像查一張表,實際是即時執行背後的查詢</td></tr>
+      <tr><td><strong>Stored Procedure<br>預存程序</strong></td><td>保存在資料庫中的一段可重複呼叫的處理流程,可包含多個步驟與異動</td></tr>
+      <tr><td><strong>Transaction<br>交易</strong></td><td>把多個資料異動包成一個「全有或全無」的單位:全部成功才生效,任一步失敗就整包還原</td></tr>
+      <tr><td><strong>Schema<br>結構描述</strong></td><td>資料庫的整體結構藍圖:有哪些表、欄位、型別、關聯</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>Transaction:轉帳的「全有或全無」</h2>
+    <p>Transaction 值得多看一眼,因為它保護著資料的一致性。經典例子是轉帳:</p>
+<pre>轉帳 1,000 元,包含兩個動作:
+步驟 1:A 帳戶扣 1,000
+步驟 2:B 帳戶加 1,000
+
+沒有 Transaction:步驟 1 成功後系統當機
+→ A 的錢扣了,B 沒收到,1,000 元憑空消失
+
+有 Transaction:兩步包成一個交易
+→ 步驟 2 失敗,步驟 1 自動還原(Rollback)
+→ 要嘛兩步都成功,要嘛都沒發生,錢不會消失</pre>
+    <p>企業系統裡「建訂單+扣庫存」「結帳的十個步驟」都靠 Transaction 保護。它也解釋了一種現象:批次作業中途失敗,資料卻「完全沒進去」而不是「進去一半」——那正是 Transaction 整包還原的結果。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:回報「系統變慢」時,提供對的線索</h3>
+    <p>「查詢慢」的回報,如果能補上「查哪個功能、用什麼條件查、資料量大概多少」,工程師就能快速判斷是不是索引問題。您甚至可以主動問:「這個查詢條件的欄位,有建索引嗎?」——這一問常讓工程師眼睛一亮。</p>
+    <h3>場景二:聽懂系統文件與交接內容</h3>
+    <p>接手既有系統時,文件裡寫著「報表都查 View,不要直接查底層表」「月結跑 SP_MonthlyClose」,現在您看得懂了:前者是為了統一查詢邏輯,後者是月結流程被封裝成了預存程序。看懂這些,交接會議的吸收效率完全不同。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>三個名詞,三種「預先準備」</h2>
+    <h3>概念一:它們的共通精神是「先準備好,重複使用」</h3>
+    <p>Index 預先建好目錄、View 預先存好查詢、Stored Procedure 預先存好流程。三者都是把「常用的東西」事先準備好,換取速度、一致性與便利。理解這個精神,三個名詞就不再是孤立的術語。</p>
+    <h3>概念二:View 是透鏡,不是另一份資料</h3>
+    <p>查 View 看到的資料,來自底層的表;底層資料一變,View 看到的就跟著變。所以「View 的數字不對」,根源幾乎都在底層資料或 View 定義的查詢邏輯(回到 4-6、4-7 的排查方法),不是 View「存了舊資料」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>速度與一致性,各有守護者</h2>
+    <h3>概念三:查詢慢,先想 Index;資料半套,先想 Transaction</h3>
+    <p>兩個常見症狀,各自對應一個機制:「越查越慢」常是資料量長大後索引缺席;「批次失敗後資料整包沒進去」是 Transaction 還原的正常表現,不用驚慌,修正錯誤後重跑即可。</p>
+    <h3>概念四:Schema 是溝通用的地圖</h3>
+    <p>要理解一個系統的資料,跟工程師要一份 Schema(或資料表清單與關聯圖)是最快的起手式。單元 4 學過的一切——表、欄位、型別、PK、FK、關聯形狀——正是讀懂這份地圖需要的全部語彙。您現在已經具備了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:32%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>View vs Table</td><td>Table 實際存放資料;View 是存好的查詢,本身通常不存資料,查它時即時去底層表取。View 像透鏡,Table 像實體。</td></tr>
+      <tr><td>View vs Stored Procedure</td><td>View 是「存好的查詢」,只負責呈現資料;Stored Procedure 是「存好的流程」,可以執行一連串動作,包含異動資料。一個是看,一個是做。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的月結流程</h2>
+    <p>Northstar 的 ERP 每月一日凌晨自動執行月結,某天財務發現月結資料是空的:</p>
+<pre>月結設計:Stored Procedure「SP_MonthlyClose」,包含 10 個步驟,
+          整個流程包在一個 Transaction 裡
+當天狀況:步驟 7(計算部門分攤)因一筆異常資料而失敗
+結果:Transaction 整包還原 → 前 6 步的資料也都不存在
+      月結資料「完全空白」,而不是「做到一半」</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>ERP、SP_MonthlyClose 預存程序、Transaction 機制、財務團隊。</li>
+      <li><strong>資料如何移動?</strong>月結流程依序執行 10 步,全部成功才一次生效。</li>
+      <li><strong>各機制負責什麼?</strong>Stored Procedure 封裝流程;Transaction 保證不會留下「半套」的月結資料。</li>
+      <li><strong>哪裡可能出錯?</strong>如果誤以為「資料全空 = 流程根本沒跑」,排查方向就偏了;實際上流程跑了、在第 7 步失敗、被整包還原。</li>
+      <li><strong>第一個合理的檢查方向?</strong>請工程師查執行紀錄,確認流程停在哪一步、錯誤訊息是什麼——修正那筆異常資料後重跑,通常就能完成月結。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>Index</td><td>平台自動為部分欄位建索引;External ID 與 Unique 欄位也會被索引,查詢效能調校時常被提及</td></tr>
+      <tr><td>View</td><td>概念上類似 List View 或報表(預存的查詢視角)</td></tr>
+      <tr><td>Stored Procedure / Transaction</td><td>Apex 的批次處理與交易控制(一個交易內失敗會整批還原)</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「索引越多越好,乾脆每個欄位都建」</h3>
+    <p>索引加速查詢,卻拖慢寫入、佔用空間。建哪些索引要看實際查詢模式取捨,不是無腦全建。</p>
+    <h3>誤解二:「View 存著一份舊資料,所以數字不對」</h3>
+    <p>View 通常不存資料,它即時反映底層表。數字不對,查 View 的定義邏輯或底層資料,別怪 View「過期」。</p>
+    <h3>誤解三:「批次失敗後資料全空,代表流程根本沒執行」</h3>
+    <p>更可能是 Transaction 整包還原的結果。查執行紀錄確認停在哪一步,比從頭懷疑排程沒跑更快找到答案。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「查詢變慢」的檢查順序</h2>
+    <ol>
+      <li><strong>確認慢的範圍。</strong>是特定查詢慢,還是整個系統都慢?整體慢可能是主機資源問題,特定查詢慢才往索引方向想。</li>
+      <li><strong>整理這個查詢的條件與資料量。</strong>查哪張表?用什麼欄位篩選?表裡大約幾筆資料?</li>
+      <li><strong>問工程師:查詢條件的欄位有沒有索引。</strong>資料量長大後,缺索引的問題會逐漸浮現。</li>
+      <li><strong>確認是不是最近才變慢的。</strong>如果是,問問最近資料量是否大增、或查詢邏輯是否被改過。</li>
+      <li><strong>把以上資訊一次提供給工程師。</strong>範圍、條件、資料量、時間點,四項齊全,排查速度完全不同。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Index 是欄位的目錄:加速查詢,但增加寫入成本;「查詢慢」先想它。</li>
+      <li>View 是存好的查詢視角,像透鏡不存資料;Stored Procedure 是存好的流程,可以執行異動。</li>
+      <li>Transaction 保證「全有或全無」:批次失敗後資料整包消失,是還原機制的正常表現。</li>
+      <li>Schema 是資料庫的地圖;單元 4 教過的語彙,已足夠您讀懂它、跟工程師對話。</li>
+    </ol>
+    <p>恭喜您完成單元 4!從資料表的基本單位,到鍵與關聯、查詢與接合,再到這一章的三個常見機制——資料庫的共同語言,您已經掌握了一整套。下一單元,我們要面對真實世界最麻煩的部分:資料品質與資料治理。</p>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 1/4</span>
+    <h2>查詢很慢,工程師說「加個 Index 就快了」。Index 的作用是?</h2>
+    <button class="opt" data-val="A" type="button">A. 像書的目錄,讓查詢不用逐筆掃描整張表</button>
+    <button class="opt" data-val="B" type="button">B. 把資料壓縮變小</button>
+    <button class="opt" data-val="C" type="button">C. 自動刪除舊資料</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。Index 是預先建好的查找結構,查詢時直接跳到目標,免去全表掃描,大資料量下速度可差上百倍。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:View 裡面存著一份獨立的資料副本,所以底層表更新後,View 的內容會過期。</h2>
+    <button class="opt" data-val="A" type="button">是,View 要定期手動更新</button>
+    <button class="opt" data-val="B" type="button">否,View 是存好的查詢,即時反映底層表的資料</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。View 通常不存資料,查它時即時執行背後的查詢,底層一變它就跟著變。數字不對要查定義邏輯或底層資料。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>「A 帳戶扣款成功、B 帳戶入帳失敗時,扣款自動還原」——這是哪個機制在保護?</h2>
+    <button class="opt" data-val="A" type="button">A. Index</button>
+    <button class="opt" data-val="B" type="button">B. View</button>
+    <button class="opt" data-val="C" type="button">C. Transaction</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Transaction 把多個異動包成「全有或全無」的單位,任一步失敗就整包還原,守住資料的一致性。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:月結批次半夜失敗,早上發現月結資料「完全空白」。最合理的解讀是?</h2>
+    <button class="opt" data-val="A" type="button">A. 排程根本沒有啟動</button>
+    <button class="opt" data-val="B" type="button">B. 流程有執行但中途失敗,Transaction 把已完成的步驟整包還原了</button>
+    <button class="opt" data-val="C" type="button">C. 資料被駭客刪除了</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。包在 Transaction 裡的批次,中途失敗會整包還原,所以資料是「全空」而非「半套」。查執行紀錄確認停在哪一步,修正後重跑即可。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本單元完成</span>
+    <h2>辛苦了,單元 4 全部讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">跟您專案的工程師要一份系統的資料表清單或關聯圖(Schema),用這個單元學的語彙讀讀看——哪些是主檔?哪些是明細?PK 和 FK 在哪裡?</div>
+    <p>下一單元是「資料品質與資料治理」:當多個系統都有同一位客戶的資料、而且長得都不一樣時,該以誰為準、怎麼清理、怎麼同步——真實世界的硬仗,從 5-1 開始。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-8';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

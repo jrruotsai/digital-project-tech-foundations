@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-3 表單欄位與資料送出｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 3 ・ 第 3 章｜表單欄位與資料送出 — form 與 input</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>表單欄位與資料送出<br>form 與 input</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 3-1、2-2、2-3 再來。</p>
+    <p>1-3 案例裡提過的報名表單,這一章要正式拆開來看它的 HTML 結構,並接回 2-2、2-3 教過的 Request 和 Method,把「填表單」這個動作,從頭到尾串成完整的一條線。</p>
+    <ul>
+      <li>認得 form、input、select、textarea、button 這幾個表單元素。</li>
+      <li>說明 id、class、name 這三個常見屬性的差異。</li>
+      <li>看到一段表單 HTML,能判斷欄位的角色和送出方式。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「這個欄位的 name 打錯了,難怪後端收不到資料」</h2>
+    <p>Northstar Electronics 的報名表單,顧問發現後端資料庫裡,某個欄位永遠是空的,詢問工程師後得到答案:</p>
+    <div class="bubble">「喔,前端那個輸入欄位的 name 屬性打錯字了,跟後端預期接收的名稱對不上,難怪資料傳不過去。」</div>
+    <p>這句話點出一個關鍵:表單能不能正確把資料送到後端,牽涉到一個叫 <code>name</code> 的屬性有沒有設對。這一章要把表單的完整結構講清楚,包含這個常常被忽略、卻很關鍵的細節。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>一張紙本申請表</h2>
+    <p>想像您在填一張紙本申請表:表格最上方有標題「活動報名表」,底下是一格一格要填的欄位:姓名、Email、公司,最後有一個「送出」的按鈕(或印章)。</p>
+    <p>HTML 裡的 <strong><code>form</code></strong>(表單)就是這整張紙本表格的邊框——把所有相關欄位框在一起,並且知道「填完之後要送到哪裡去」。<strong><code>input</code></strong>(輸入)就是表格上一格一格讓您填寫的空格,可以是文字欄位、也可以是核取方塊(透過 3-1 教過的 <code>type</code> 屬性決定)。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      form 是整張表格的框架,input 是表格裡的每一格空白。沒有 form 包起來,瀏覽器不知道這些 input 該一起送到哪裡去。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>下拉選單、大段留言框,和送出的印章</h2>
+    <p>除了讓您手打文字的空格,表單還有其他形式的欄位。<strong><code>select</code></strong>(選擇)是一個下拉選單,讓您從固定的幾個選項裡挑一個,像是選擇「國家」時常看到的下拉清單。<strong><code>textarea</code></strong>(文字區域)則是給您打一大段文字的留言框,適合像「備註」這類需要多行文字的欄位。</p>
+    <p>填完整張表格,最後按下的那個「送出」印章,就是 <strong><code>button</code></strong>(按鈕)。按下它,通常會觸發 2-3 教過的 POST 方法,把整張表格的內容打包送給後端。</p>
+    <p>回到開頭的問題。每一格欄位除了看得到的文字內容,背後還帶著一個 <code>name</code> 屬性,告訴後端「這一格資料,應該對應到哪個欄位名稱」。如果這個屬性打錯字,就像在紙本表格上,填的欄位標籤和收發室認得的名稱對不上,資料自然收不到正確的地方。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>幾個表單元素與屬性的正式說法</h2>
+    <table>
+      <tr><th style="width:20%;">名稱</th><th>定義</th></tr>
+      <tr><td><strong>form</strong></td><td>把一組相關欄位框在一起,並定義送出目的地與方式的容器元素</td></tr>
+      <tr><td><strong>input</strong></td><td>讓使用者輸入資料的欄位,可透過 type 屬性變化成文字、核取方塊等不同形式</td></tr>
+      <tr><td><strong>select</strong></td><td>下拉選單,讓使用者從固定選項中選擇</td></tr>
+      <tr><td><strong>textarea</strong></td><td>多行文字輸入區域</td></tr>
+      <tr><td><strong>button</strong></td><td>可點擊的按鈕,常用來觸發表單送出</td></tr>
+      <tr><td><strong>id</strong></td><td>指定給某一個元素的唯一識別名稱,理論上整個頁面裡不該重複</td></tr>
+      <tr><td><strong>class</strong></td><td>可以套用在多個元素上的分類標籤,常用於統一設定樣式(3-4 會教)</td></tr>
+      <tr><td><strong>name</strong></td><td>表單欄位送出資料時,對應到後端接收的欄位名稱</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一張報名表單的完整結構</h2>
+    <p>把 1-3 教過的活動報名表單,實際用 HTML 呈現出來:</p>
+<pre>&lt;form action="/register" method="POST"&gt;
+  &lt;input type="text" name="firstName" placeholder="First Name"&gt;
+  &lt;input type="text" name="lastName" placeholder="Last Name"&gt;
+  &lt;input type="email" name="email" placeholder="Email"&gt;
+  &lt;select name="country"&gt;
+    &lt;option&gt;Taiwan&lt;/option&gt;
+    &lt;option&gt;Japan&lt;/option&gt;
+  &lt;/select&gt;
+  &lt;input type="checkbox" name="consent"&gt; 同意接收行銷資訊
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;</pre>
+    <p>逐段解釋:<code>form</code> 上的 <code>action</code> 屬性(2-1 教過的網址概念),告訴瀏覽器資料要送到哪個網址;<code>method="POST"</code> 呼應 2-3 教過的方法;每個 <code>input</code> 的 <code>name</code> 屬性,決定後端會用什麼名稱收到這筆資料;按下 <code>button</code>,就會把整張表單打包成一次 POST Request 送出去。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:排查「資料送不出去或送錯地方」的問題</h3>
+    <p>當某個欄位的資料一直收不到,可以先請工程師確認這個欄位的 <code>name</code> 屬性,是否跟後端期待接收的名稱一致。這是表單資料傳遞失敗最常見、也最容易被忽略的原因之一。</p>
+    <h3>場景二:看懂需求訪談中「欄位設計」的討論</h3>
+    <p>客戶討論表單需求時,理解 <code>select</code>(固定選項)、<code>textarea</code>(自由文字)、<code>input checkbox</code>(是非選擇)這幾種形式的差異,能幫助您更準確地把客戶想要的欄位形式,轉達給開發團隊。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>form 決定「送去哪裡、怎麼送」</h2>
+    <h3>概念一:form 上的 action 和 method,決定了整張表單的行為</h3>
+    <p>action 屬性(網址)和 method 屬性(通常是 GET 或 POST,呼應 2-3),合起來決定了按下送出按鈕後,資料會被送到哪個網址、用哪種方式送。這兩個屬性設定錯誤,會導致整張表單完全送不出去,而不只是某個欄位的問題。</p>
+    <h3>概念二:每個欄位的 name,是後端辨識資料的依據</h3>
+    <p>後端收到表單資料時,是靠每個欄位的 <code>name</code> 屬性來對應「這是哪一項資料」,不是靠畫面上顯示的文字(那只是給使用者看的提示,通常用 <code>placeholder</code> 屬性設定,3-1 提過)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>id、class、name 各自扮演不同角色</h2>
+    <h3>概念三:id 是唯一的,class 可以重複套用</h3>
+    <p>id 通常用來精確指定「這一個」元素(例如某個特定的欄位);class 則可以套用在多個元素上,常用來統一設定一批元素的樣式(3-4 會教)。兩者角色不同,不能混為一談。</p>
+    <h3>概念四:name 專門服務於表單資料的傳遞,跟 id、class 目的不同</h3>
+    <p>id 和 class 主要跟畫面呈現、程式操作有關;name 則專門用於表單送出時,標示每個欄位對應的資料名稱。三者看起來都是「幫元素取名字」,但各自服務的目的完全不同。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>id vs class</td><td>id 是唯一的,一個頁面裡理論上不該有兩個相同的 id;class 可以套用在多個元素上,用來做批次的樣式設定或程式操作。</td></tr>
+      <tr><td>placeholder vs name</td><td>placeholder 是給使用者看的提示文字(欄位還沒填寫時,淡淡顯示的說明);name 是後端辨識這筆資料對應哪個欄位的依據,使用者通常看不到 name 的內容。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的欄位對應錯誤</h2>
+    <p>報名表單的「公司名稱」欄位,顧問發現後端資料庫裡永遠收不到這筆資料,追查後發現:</p>
+<pre>前端 HTML:&lt;input type="text" name="compnay"&gt;（拼字打錯,少了一個字母排列錯誤)
+後端期待接收的欄位名稱:company</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>前端的表單 HTML、後端的資料接收邏輯。</li>
+      <li><strong>資料如何移動?</strong>使用者填寫的公司名稱,雖然畫面上顯示正常,但送出時的欄位名稱跟後端不一致。</li>
+      <li><strong>各部分負責什麼?</strong>後端程式是根據事先講好的欄位名稱來接收資料,如果名稱對不上,後端會完全收不到這筆資料,也不會特別報錯。</li>
+      <li><strong>哪裡可能出錯?</strong>這種拼字錯誤在畫面上完全看不出來(使用者看到的提示文字可能完全正確),只有檢查 HTML 原始碼或後端紀錄才能發現。</li>
+      <li><strong>第一個合理的檢查方向?</strong>用 2-8 教過的開發者工具,檢查這個欄位的 name 屬性,並跟後端工程師確認期待接收的正確名稱是否一致。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>表單 name 對應</td><td>Salesforce Web-to-Lead 表單,同樣需要把 HTML 欄位的 name 屬性,對應到 Salesforce 後端指定的欄位名稱,一旦對不上就會收不到資料</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「畫面上的提示文字正確,資料就一定送對地方」</h3>
+    <p>畫面上顯示的提示文字(placeholder)和實際傳遞資料用的欄位名稱(name)是兩回事,前者正確不代表後者也正確。</p>
+    <h3>誤解二:「表單填完按送出,一定是即時生效的」</h3>
+    <p>是否即時生效,牽涉到 1-6 教過的即時或批次處理概念,跟表單本身的 HTML 結構是不同層次的問題。</p>
+    <h3>誤解三:「input 只能是文字輸入欄位」</h3>
+    <p>input 透過不同的 type 屬性,可以變成文字欄位、核取方塊、單選按鈕等多種形式,不是只有一種樣貌。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「表單資料收不到」的檢查順序</h2>
+    <ol>
+      <li><strong>確認表單本身有沒有成功送出。</strong>用 2-8 教過的 Network 工具確認有沒有出現對應的 Request。</li>
+      <li><strong>確認 form 的 action 和 method 設定是否正確。</strong>是否指向正確的網址與方法。</li>
+      <li><strong>確認出問題的那個欄位的 name 屬性。</strong>是否跟後端期待接收的名稱一致。</li>
+      <li><strong>確認是不是拼字或大小寫上的細微差異。</strong>這類錯誤在畫面上完全看不出來。</li>
+      <li><strong>把具體的欄位名稱提供給前後端工程師確認。</strong>讓雙方能對照名稱是否一致。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>form 是整張表格的框架,決定資料要送去哪裡、用什麼方式送;input、select、textarea 是不同形式的填寫欄位。</li>
+      <li>每個欄位的 name 屬性,是後端辨識資料的依據,跟畫面上顯示的提示文字是兩回事。</li>
+      <li>id 是唯一識別,class 可以套用在多個元素上,name 專門服務表單資料傳遞,三者角色不同。</li>
+      <li>表單資料收不到,經常是 name 拼字或大小寫對不上造成的,這種錯誤在畫面上完全看不出來。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>決定表單欄位資料要對應到後端哪個欄位名稱的屬性是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. placeholder</button>
+    <button class="opt" data-val="B" type="button">B. name</button>
+    <button class="opt" data-val="C" type="button">C. class</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。name 屬性是後端辨識這筆資料對應哪個欄位的依據,跟畫面呈現的提示文字無關。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:畫面上的提示文字(placeholder)顯示正確,不代表資料一定會送到後端正確的欄位。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,提示文字正確資料就一定沒問題</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。提示文字和欄位的 name 屬性是兩回事,前者正確不代表後者也一定正確。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>讓使用者從固定選項中挑選一個的表單元素是哪一個?</h2>
+    <button class="opt" data-val="A" type="button">A. textarea</button>
+    <button class="opt" data-val="B" type="button">B. button</button>
+    <button class="opt" data-val="C" type="button">C. select</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。select 是下拉選單,讓使用者從固定的幾個選項中選擇一個。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:表單的某個欄位一直收不到資料,但畫面顯示完全正常。第一個合理的檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 檢查這個欄位的 name 屬性拼字是否正確</button>
+    <button class="opt" data-val="B" type="button">B. 直接重寫整個表單</button>
+    <button class="opt" data-val="C" type="button">C. 懷疑使用者沒有真的填寫</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。name 屬性的拼字錯誤在畫面上完全看不出來,卻是資料傳遞失敗最常見的原因之一,值得優先檢查。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">用開發者工具檢查一個您常用的表單(例如公司內部系統的登入表單),看看每個欄位的 name 屬性長什麼樣子。</div>
+    <p>下一章我們會教 CSS 如何控制樣式——決定這些表單欄位「長什麼樣子」的另一半拼圖。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch3-4.html">前往下一章：3-4 CSS 如何控制樣式 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '3-3';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

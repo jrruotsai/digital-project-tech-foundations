@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-2 Master Data 與資料責任 — Data Owner 與 Data Steward｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 5 ・ 第 2 章｜Master Data 與資料責任 — Data Owner 與 Data Steward</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Master Data 與資料責任<br>Data Owner 與 Data Steward</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 5-1。</p>
+    <p>上一章決定「哪個系統是正本」。接著還有一個更現實的問題：誰負責讓正本維持可用？如果沒有人做決定、也沒有人處理日常品質，再正式的規則都會慢慢失效。</p>
+    <ul>
+      <li>理解 Master Data 為何會被多個流程重複使用。</li>
+      <li>分清 Data Owner 與 Data Steward 的責任。</li>
+      <li>遇到資料爭議時，知道該找誰決策、找誰追查。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「客戶產業別，到底誰能改？」</h2>
+    <p>Northstar Electronics 的業務想把一批客戶的產業別改成新的分類；行銷部門擔心改完後，既有名單會全部跑掉。資訊部門則說欄位技術上可以改，但不願替業務規則背書。</p>
+    <div class="bubble">「系統權限我可以開，可是誰有權決定分類規則？改錯之後，又是誰要把三千筆資料整理回來？」</div>
+    <p>這時缺的不是一個更大的權限，而是明確的資料責任。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>連鎖餐廳共用的食材名冊</h2>
+    <p>一家連鎖餐廳有幾十間分店。各店每天都會用到「食材名稱、供應商、規格、過敏原」這份名冊。若每家店各自把同一項食材取不同名字，採購、庫存和菜單標示很快就會對不起來。</p>
+    <p><strong>Master Data（主資料）</strong>很像這份共用名冊：它不是某一張訂單，而是許多交易與流程都會反覆引用的基礎資料。</p>
+    <div class="note"><span class="nt">先記住這句</span>主資料是「大家反覆共用的基本名冊」，例如客戶、產品、供應商與組織資料。</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>一個人定規則，一個人顧日常</h2>
+    <p>餐廳總部決定「食材分類要分到哪一層、誰可以新增供應商」，這是管理上的決策。每天檢查重複品名、補齊過敏原、追供應商確認規格，則是持續的整理工作。</p>
+    <p>前者像 <strong>Data Owner</strong>，有權決定規則並承擔結果；後者像 <strong>Data Steward</strong>，負責把規則落到日常資料上。兩個角色可能由不同人擔任，也可能由同一個小組兼任。</p>
+    <div class="note"><span class="nt">判斷口訣</span>要拍板，找 Owner；要追資料、執行規則，找 Steward。</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:28%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Master Data<br>主資料</strong></td><td>跨流程、跨系統反覆使用，用來描述核心業務對象的基礎資料，如客戶、產品、供應商</td></tr>
+      <tr><td><strong>Data Owner<br>資料擁有者</strong></td><td>對某一資料領域有決策權並承擔責任的業務角色，負責核定規則、用途與品質標準</td></tr>
+      <tr><td><strong>Data Steward<br>資料管理者</strong></td><td>執行資料規則、監看品質、協調修正與處理日常例外的人員</td></tr>
+    </table>
+    <p>Owner 不等於「資料在他的電腦裡」，Steward 也不只是幫忙輸入資料。這兩個詞談的是治理責任。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一項主資料從新增到修正</h2>
+    <p>以 Northstar 新增客戶產業分類為例：</p>
+<pre>業務提出新增分類需求
+→ Data Steward 檢查是否已有相近分類、整理影響範圍
+→ Data Owner 核定分類名稱、適用規則與生效日
+→ 系統管理者依核定內容調整選項
+→ Data Steward 檢查既有資料、安排清理並追蹤品質</pre>
+    <p>資訊部門負責讓設定正確上線，但不替業務部門決定「產業分類應該怎麼分」。角色切開，責任才不會混在一起。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>顧問最常遇到的兩個場景</h2>
+    <h3>場景一：需求卡在「沒人敢決定」</h3>
+    <p>欄位規則談了三次仍沒結論，先別急著排開發。請客戶確認這個資料領域的 Owner，讓有決策權的人進會議。</p>
+    <h3>場景二：上線後品質一路變差</h3>
+    <p>規則文件寫得很好，卻沒有人定期檢查空值與重複。這通常是 Steward 的日常責任沒有被指派，不一定是系統功能不足。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>先分資料，再分責任</h2>
+    <h3>概念一：主資料和交易資料用途不同</h3>
+    <p>客戶、產品是可被許多流程引用的主資料；訂單、付款、客服案件是一次次發生的交易或活動紀錄。兩者都重要，但管理方式不同。</p>
+    <h3>概念二：Owner 通常來自業務，不是資訊部門</h3>
+    <p>「客戶等級怎麼定」是業務政策。資訊部門可以說明系統限制，卻不該代替業務主管決定分級規則。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>責任要落到可執行的動作</h2>
+    <h3>概念三：一個人不必包辦所有事</h3>
+    <p>Owner 可以授權 Steward 處理日常例外，但重大規則、品質門檻與跨部門爭議仍要由 Owner 拍板。</p>
+    <h3>概念四：角色名稱不重要，責任寫清楚才重要</h3>
+    <p>有些公司不使用 Data Steward 這個職稱。只要文件明確寫出誰核定、誰檢查、誰修正、多久回報一次，治理就能運作。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>三組看起來相近的概念</h2>
+    <table>
+      <tr><th>容易混淆</th><th>怎麼分</th></tr>
+      <tr><td>Master Data vs Transaction Data</td><td>前者是反覆引用的基本對象；後者是一次交易或事件留下的紀錄</td></tr>
+      <tr><td>Data Owner vs System Owner</td><td>Data Owner 決定資料規則；System Owner 負責系統生命週期與運作</td></tr>
+      <tr><td>Data Steward vs Data Entry</td><td>Steward 監看品質並協調例外，不只是把資料輸入系統</td></tr>
+    </table>
+    <p>若還覺得模糊，先問一句：「這個人是在決定資料規則，還是在執行與維護規則？」通常就能分出來。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar 的客戶主資料責任表</h2>
+    <p>Northstar 把客戶主資料拆成幾個責任領域：</p>
+<pre>資料領域       Data Owner       Data Steward
+客戶基本資料    銷售營運主管      CRM 營運專員
+帳單與稅務資料  財務主管          ERP 主檔管理人員
+行銷訂閱狀態    行銷營運主管      行銷平台管理人員</pre>
+    <ol>
+      <li><strong>角色：</strong>三位 Owner、三類 Steward，以及使用資料的業務人員。</li>
+      <li><strong>資料流：</strong>各領域依 5-1 指定的正本系統維護，再同步到副本。</li>
+      <li><strong>可能出錯：</strong>把「客戶資料」全部交給同一位 Owner，導致稅務與訂閱規則沒人敢決定。</li>
+      <li><strong>第一個檢查方向：</strong>先查爭議欄位屬於哪個資料領域，再找對應的 Owner。</li>
+    </ol>
+    <div class="note"><span class="nt">顧問可以先問</span>「這個欄位的規則由哪個業務角色核定？日常異常由誰處理？」</div>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照（選讀）</span>
+    <h2>在企業應用裡可能看到的做法</h2>
+    <p>不熟悉這些產品的話，這張卡片可以跳過。</p>
+    <table>
+      <tr><th>通用概念</th><th>常見做法</th></tr>
+      <tr><td>客戶主資料</td><td>在 Salesforce 或主資料管理平台維護客戶基本資料，再提供其他系統使用</td></tr>
+      <tr><td>Data Steward 工作</td><td>定期檢查重複 Account、缺漏欄位與不合規的選項值，協調業務修正</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個責任分工的陷阱</h2>
+    <h3>誤解一：「資料放在 CRM，CRM 管理員就是 Owner」</h3>
+    <p>管理員負責系統設定，不代表他有權決定業務規則。Owner 通常是該資料領域的業務主管。</p>
+    <h3>誤解二：「找了 Owner，他就要親自修每一筆資料」</h3>
+    <p>Owner 負責決策與承擔結果；日常檢查、協調修正多由 Steward 執行。</p>
+    <h3>誤解三：「設一位全公司 Data Owner 最省事」</h3>
+    <p>客戶、財務、產品各有不同專業。責任切得太粗，最後仍會回到沒人能拍板。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>資料規則沒人決定時的五步</h2>
+    <ol>
+      <li>確認爭議的是哪一個欄位或資料領域。</li>
+      <li>查責任表是否已指定 Data Owner 與 Data Steward。</li>
+      <li>找 Owner 確認規則、品質門檻與例外處理原則。</li>
+      <li>找 Steward 盤點受影響資料並安排修正。</li>
+      <li>把決定寫回責任表、資料字典或作業流程。</li>
+    </ol>
+    <p>前兩步只需要把責任文件和欄位清單攤開，不用先查程式。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Master Data 是跨流程反覆使用的基本名冊，常見例子是客戶、產品與供應商。</li>
+      <li>Data Owner 有決策權，負責核定規則並承擔結果。</li>
+      <li>Data Steward 執行規則、監看品質並協調日常修正。</li>
+      <li>先按資料領域分責任，再把核定、檢查與修正動作寫清楚。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>哪一項最符合 Master Data？</h2>
+    <button class="opt" data-val="A" type="button">A. 今天成立的一張訂單</button>
+    <button class="opt" data-val="B" type="button">B. 所有訂單都會引用的產品主檔</button>
+    <button class="opt" data-val="C" type="button">C. 昨晚執行失敗的錯誤紀錄</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。產品主檔會被許多訂單與流程反覆引用，屬於主資料。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>誰應該核定「客戶產業分類」的業務規則？</h2>
+    <button class="opt" data-val="A" type="button">A. 該資料領域的 Data Owner</button>
+    <button class="opt" data-val="B" type="button">B. 任何能修改欄位的系統管理員</button>
+    <button class="opt" data-val="C" type="button">C. 第一位發現問題的使用者</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。Data Owner 對資料領域有決策權；系統管理員可以協助實作，但不代替業務拍板。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>哪一項最像 Data Steward 的日常工作？</h2>
+    <button class="opt" data-val="A" type="button">A. 核准全公司新的客戶分級政策</button>
+    <button class="opt" data-val="B" type="button">B. 決定明年度 CRM 預算</button>
+    <button class="opt" data-val="C" type="button">C. 每週檢查重複客戶並協調修正</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。監看品質、追查問題與協調修正，正是 Steward 的日常責任。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>欄位規則討論三次仍沒人敢決定，顧問第一步該做什麼？</h2>
+    <button class="opt" data-val="A" type="button">A. 確認這個資料領域的 Data Owner 並請他參與決策</button>
+    <button class="opt" data-val="B" type="button">B. 請工程師先選一個看起來合理的規則</button>
+    <button class="opt" data-val="C" type="button">C. 暫時開放所有人自由修改</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。問題卡在決策責任，不是技術；先找有權拍板的 Owner。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了，資料責任已經分清楚</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題：</p>
+    <div class="bubble">在您熟悉的專案裡，哪一類資料最常出現「人人都能改，卻沒有人負責」的情況？</div>
+    <p>下一章會處理另一個常見麻煩：同一個客戶在系統裡出現兩次，該怎麼判斷是不是同一人？</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch5-3.html">前往下一章：5-3 Duplicate 與 Matching →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '5-2';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

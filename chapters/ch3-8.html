@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-8 Hidden Field 與 Tracking Script｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 3 ・ 第 8 章｜Hidden Field 與 Tracking Script — 看不見的欄位與程式</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Hidden Field<br>與 Tracking Script</h2>
+    <p class="lead">預估 30 分鐘 ・ 單元 3 的最後一章,建議先讀完 3-1、3-3、3-6 再來。</p>
+    <p>並不是網頁上的每一個元素,使用者都看得到。這一章要教您兩種「隱形」的存在:表單裡看不見的欄位,以及在背景默默運作的追蹤程式。它們雖然看不到,但常常扮演重要角色。</p>
+    <ul>
+      <li>說明 Hidden Field 的常見用途。</li>
+      <li>初步理解 Tracking Script 如何被載入到網頁裡。</li>
+      <li>看到表單資料裡多出「解釋不了的欄位」時,知道可能是怎麼回事。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「這筆報名資料裡,怎麼有個我們沒設計過的欄位?」</h2>
+    <p>Northstar Electronics 的行銷同仁查看報名資料時,發現每一筆資料都多帶了一個叫 <code>utm_source</code> 的欄位,內容是「google」或「newsletter」這類值,好奇地問工程師:</p>
+    <div class="bubble">「表單上根本沒有這個欄位讓人填,這是哪裡來的?」工程師解釋:「那是 Hidden Field,用來記錄這位訪客是從哪個管道進來的,填表單的人看不到它。」</div>
+    <p>這一章要把這種「看不見卻存在」的欄位,還有另一種看不見的存在——追蹤程式——一併講清楚。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>信封裡夾帶的一張小紙條</h2>
+    <p>想像您收到一封信,信紙上是寫給您看的內容,但信封裡其實還夾了一張小紙條,寫著寄件單位內部用的分類編號——這張紙條不是寫給您看的,是寄件方自己要用的參考資訊。</p>
+    <p><strong>Hidden Field(隱藏欄位)</strong>正是表單裡的這張小紙條:它是一個真實存在的 <code>input</code>(3-3 教過的元素),透過 <code>type="hidden"</code>(3-1 教過的屬性)這個設定,讓它不在畫面上顯示出來,但送出表單時,它的值一樣會被夾帶送出。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Hidden Field 不是「消失」了,只是「不顯示」。它一樣是表單的一部分,一樣會被送出,只是使用者的眼睛看不到它。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>店裡的隱藏攝影機,默默記錄客流</h2>
+    <p>再看另一種看不見的存在。想像一家店在天花板裝了攝影機,默默記錄有多少人經過、在哪個貨架前停留比較久。客人逛街時完全不會注意到攝影機的存在,但店家藉此了解客流狀況,調整商品擺放。</p>
+    <p><strong>Tracking Script(追蹤程式)</strong>就是網頁世界裡的這種攝影機——一段 3-2 教過的 <code>script</code> 元素,載入到網頁裡,默默記錄使用者的瀏覽行為(例如造訪了哪些頁面、停留多久),但不會在畫面上顯示任何內容。</p>
+    <p>回到開頭 <code>utm_source</code> 的案例。這通常是行銷活動常用的一種做法:當訪客點擊一則來自 Google 或電子報的連結進入網站時,網址後面會帶著一段標記(呼應 2-2 教過的 Query Parameter),說明這位訪客是從哪個管道來的。網頁的 Tracking Script 或表單邏輯,會讀取這段標記,悄悄地放進一個 Hidden Field 裡,這樣即使訪客完全不知情,行銷團隊也能知道每一筆報名資料的來源管道。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩個關鍵名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:24%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Hidden Field<br>隱藏欄位</strong></td><td>表單中不對使用者顯示,但送出時仍會一併傳遞資料的欄位,通常用 <code>type="hidden"</code> 設定</td></tr>
+      <tr><td><strong>Tracking Script<br>追蹤程式</strong></td><td>載入到網頁裡、不顯示畫面內容,但默默記錄使用者行為或環境資訊的程式碼</td></tr>
+    </table>
+    <p>看一個實際的 Hidden Field 範例:<code>&lt;input type="hidden" name="utm_source" value="google"&gt;</code>——這個欄位不會出現在畫面上,但送出表單時,<code>utm_source=google</code> 這筆資料,會跟其他看得見的欄位一起被送到後端。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一位訪客從點擊連結到報名完成的旅程</h2>
+    <p>把 Hidden Field 和 Tracking Script 放進完整流程裡看:</p>
+<pre>1. 訪客在 Google 搜尋結果點擊 Northstar 的廣告連結
+   → 網址後面帶著標記:northstar-electronics.com/event?utm_source=google
+2. 網頁載入時,一段 Tracking Script(或表單邏輯)讀取這段網址標記
+3. 這段程式,把讀到的值寫進表單裡一個 Hidden Field
+4. 訪客填寫姓名、Email 等看得見的欄位,完全不會看到這個 Hidden Field
+5. 按下送出,所有欄位(包含 Hidden Field)一起被送到後端(2-2 教過的 Request)</pre>
+    <p>整個過程中,訪客自始至終都不會意識到這段「幕後資料」的存在,但它確實跟著整張表單,一路傳到了後端。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:理解行銷歸因資料是怎麼收集來的</h3>
+    <p>當客戶問「你們怎麼知道這些報名者是從哪個管道來的」,您現在能理解,答案通常牽涉到網址標記、Tracking Script 和 Hidden Field 這一整套機制,而不是憑空冒出來的資訊。</p>
+    <h3>場景二:排查「資料裡出現解釋不了的欄位」時,不會過度緊張</h3>
+    <p>看到資料庫或報表裡出現不熟悉的欄位名稱,先確認是不是 Hidden Field 這類刻意設計、用於行銷或分析目的的欄位,而不是立刻懷疑資料外洩或系統異常。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>看不見,不代表不存在</h2>
+    <h3>概念一:Hidden Field 仍然是表單的一部分,一樣會被送出</h3>
+    <p>「隱藏」只影響畫面呈現,不影響資料傳遞的行為。這也是為什麼排查表單資料問題時,不能只看畫面上顯示的欄位,還要用開發者工具(2-8 教過)檢查完整的 HTML,才能看到所有欄位,包含隱藏的。</p>
+    <h3>概念二:Tracking Script 本身不顯示內容,但持續在背景運作</h3>
+    <p>呼應 3-6 教過的觀念:script 元素看不見形體,但可能承載重要的邏輯。追蹤程式正是典型的例子,它默默記錄行為,不會佔用畫面上任何視覺空間。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>這些機制常用於行銷與資料分析</h2>
+    <h3>概念三:Hidden Field 常用來傳遞使用者看不到、但系統需要的資訊</h3>
+    <p>除了行銷來源標記,Hidden Field 也可能用來傳遞表單所屬的活動編號、使用者的某個內部識別碼等,凡是「使用者不需要看到、但後端處理需要的資訊」,都可能透過這種方式傳遞。</p>
+    <h3>概念四:這一章的內容,是單元 10「網站追蹤與使用者同意」的前導</h3>
+    <p>Tracking Script 涉及蒐集使用者的瀏覽行為資訊,這跟後面單元 10 會深入教的 Cookie、同意管理(Consent Management)等議題密切相關。這裡先建立基礎認識,後面會再深入。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>一組最容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>表單資料 vs 行為追蹤資料</td><td>表單資料是使用者「主動填寫、明確提供」的資訊(如姓名、Email);行為追蹤資料是系統「被動觀察、默默記錄」的資訊(如來源管道、瀏覽足跡)。Hidden Field 有時候是這兩種資料的橋樑,把追蹤到的資訊,夾帶進表單一起送出。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的活動來源追蹤</h2>
+    <p>Northstar 想知道報名活動的訪客,主要是從哪個行銷管道來的,設計了以下機制:</p>
+<pre>電子報連結:northstar-electronics.com/event?utm_source=newsletter
+社群貼文連結:northstar-electronics.com/event?utm_source=social
+
+網頁載入時的邏輯:讀取網址上的 utm_source 值,寫入表單的 Hidden Field
+表單送出後:後端收到的資料裡,除了姓名、Email,還多了 utm_source 這個欄位</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>訪客、Northstar 的網頁邏輯、後端資料收集系統。</li>
+      <li><strong>資料如何移動?</strong>網址上的標記,透過網頁邏輯讀取後,寫入 Hidden Field,再隨表單一起送到後端。</li>
+      <li><strong>各部分負責什麼?</strong>Hidden Field 負責在使用者看不到的情況下,把行銷歸因資訊夾帶傳遞。</li>
+      <li><strong>哪裡可能出錯?</strong>如果訪客是直接輸入網址造訪(沒有經過帶有標記的連結),utm_source 這個欄位可能是空的,這是正常現象,不代表資料遺失或系統故障。</li>
+      <li><strong>第一個合理的檢查方向?</strong>如果發現大量資料的 utm_source 都是空的,先確認行銷團隊發送出去的連結,是否都有正確帶上標記,而不是先懷疑技術機制壞了。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>Hidden Field</td><td>Salesforce Web-to-Lead 表單裡,常用 Hidden Field 傳遞行銷活動編號(Campaign ID)</td></tr>
+      <tr><td>Tracking Script</td><td>行銷平台(如 Marketing Cloud、HubSpot)提供的追蹤程式碼片段,通常要求貼在網頁裡</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「看不到的欄位,就代表資料有問題或被竄改」</h3>
+    <p>Hidden Field 是刻意設計的機制,不是異常或錯誤,通常有明確的商業目的(如行銷歸因)。</p>
+    <h3>誤解二:「Tracking Script 只會用在廣告行銷上」</h3>
+    <p>追蹤程式也常用於產品分析、使用者體驗優化等目的,不限於廣告投放的歸因分析。</p>
+    <h3>誤解三:「這些看不見的機制不需要考慮使用者同意」</h3>
+    <p>蒐集使用者行為資訊,通常涉及隱私與法規要求,單元 10 會深入教相關的同意管理概念,這裡先建立「看不見不代表不需要規範」的認知。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「資料裡出現解釋不了的欄位」的檢查順序</h2>
+    <ol>
+      <li><strong>用開發者工具檢查表單的完整 HTML。</strong>確認是否有對應的 Hidden Field。</li>
+      <li><strong>確認這個欄位的用途。</strong>詢問工程師或查看文件,了解它原本設計的目的。</li>
+      <li><strong>確認資料是否符合預期的來源邏輯。</strong>例如來源標記是否跟行銷團隊發送的連結一致。</li>
+      <li><strong>如果欄位大量出現空值或異常值,再往設定或程式邏輯排查。</strong></li>
+      <li><strong>把觀察到的具體欄位名稱與數值,提供給工程師確認。</strong></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Hidden Field 是表單裡不顯示、但送出時仍會夾帶傳遞的欄位,常用於行銷歸因等目的。</li>
+      <li>Tracking Script 是不顯示畫面內容、默默記錄使用者行為的程式碼。</li>
+      <li>看不見不代表不存在,這些機制通常是刻意設計的,有明確的商業目的。</li>
+      <li>資料裡出現陌生欄位時,先了解其設計用途,不用立刻懷疑資料異常或外洩。</li>
+    </ol>
+    <p>恭喜您完成單元 3!您現在已經理解 HTML(結構)、CSS(外觀)、JavaScript(行為)這前端三大支柱,還認識了表單、驗證,以及看不見的欄位和程式。下一單元,我們會進入資料庫與資料模型的世界,理解資料真正被儲存的樣子。</p>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>表單裡不對使用者顯示,但送出時仍會夾帶傳遞的欄位,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Tracking Script</button>
+    <button class="opt" data-val="B" type="button">B. Hidden Field</button>
+    <button class="opt" data-val="C" type="button">C. Query Parameter</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。Hidden Field 是表單中不顯示、但送出時仍會傳遞資料的欄位。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:Hidden Field 雖然不顯示在畫面上,但送出表單時,它的值一樣會被夾帶傳遞出去。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,隱藏的欄位不會被送出</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。「隱藏」只影響畫面呈現,不影響資料傳遞的行為,Hidden Field 依然是表單的一部分。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>默默記錄使用者瀏覽行為、不顯示任何畫面內容的程式碼,通常叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Hidden Field</button>
+    <button class="opt" data-val="B" type="button">B. CSS Selector</button>
+    <button class="opt" data-val="C" type="button">C. Tracking Script</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Tracking Script 是載入到網頁裡,默默記錄使用者行為,但不顯示畫面內容的程式碼。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:行銷同仁發現報名資料裡,多了一個沒設計過的欄位,內容看起來像是行銷來源標記。第一個合理的反應是?</h2>
+    <button class="opt" data-val="A" type="button">A. 先確認這是不是刻意設計的 Hidden Field,了解其用途</button>
+    <button class="opt" data-val="B" type="button">B. 立刻懷疑資料被駭客竄改</button>
+    <button class="opt" data-val="C" type="button">C. 要求工程師立刻刪除這個欄位</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。這類欄位通常是刻意設計、用於行銷歸因等目的的機制,先了解用途,而不是直接假設異常或竄改。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本單元完成</span>
+    <h2>辛苦了,單元 3 全部讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">用開發者工具檢查一個您常用的報名或聯絡表單,看看有沒有找到任何 type="hidden" 的欄位,猜猜看它可能是做什麼用的。</div>
+    <p>接下來是單元 4:資料庫與資料模型。我們會離開前端的世界,深入了解資料真正被儲存、組織的方式。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '3-8';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

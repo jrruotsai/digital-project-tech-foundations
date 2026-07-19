@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1-4 SaaS、PaaS 與 IaaS｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 1 ・ 第 4 章｜SaaS、PaaS 與 IaaS — 雲端服務的三種形態</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>SaaS、PaaS 與 IaaS<br>雲端服務的三種形態</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-1 再來。</p>
+    <p>「雲端」這個詞常常被講得很抽象,好像是天上飄著什麼看不見的東西。其實它就是「別人的電腦」,差別只在於:別人幫您管到哪一層,您自己還要管哪一層。這一章就是要把這個「分工邊界」講清楚。</p>
+    <ul>
+      <li>分辨 SaaS、PaaS、IaaS 三種雲端服務模式。</li>
+      <li>說出 Cloud 與 On-premises(地端)的責任分界。</li>
+      <li>聽到系統異常時,知道該找雲端廠商,還是自己的 IT。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「伺服器掛了,是我們的問題還是廠商的問題?」</h2>
+    <p>Northstar Electronics 的 IT 主管半夜收到警報,系統回應變得很慢。他心裡冒出一個問題:</p>
+    <div class="bubble">「我們用的 CRM 是雲端服務,如果它變慢,是我們自己能處理,還是只能等廠商修?」</div>
+    <p>這個問題的答案,取決於這套 CRM 是哪一種雲端服務形態。有些形態下,IT 主管自己什麼都做不了,只能開工單等廠商;有些形態下,他其實有能力自己先做點什麼。分清楚這件事,能省下很多「到底該找誰」的焦慮。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>租房子的三種方式</h2>
+    <p>想像您要有個地方住,有三種選擇,管理責任完全不同:</p>
+    <p><strong>方式一:租一間全裝潢好的公寓,拎包入住。</strong>水電、家具、清潔都房東包了,您只管住進去用。這是 <strong>SaaS(軟體即服務)</strong>——供應商把整套軟體都準備好,您登入帳號就能用,不用管底層任何東西。</p>
+    <p><strong>方式二:租一塊已經蓋好結構、接好水電管線的毛胚屋,自己裝修隔間。</strong>大結構房東處理,但裡面怎麼隔間、放什麼家具,您自己決定。這是 <strong>PaaS(平台即服務)</strong>——供應商準備好執行環境,您在上面部署自己開發的程式。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      SaaS 是「直接用軟體」,PaaS 是「在別人準備好的平台上,跑自己的軟體」。往下管的責任,一層比一層多。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>而 IaaS,是租一塊空地自己蓋房子</h2>
+    <p><strong>方式三:租一塊空地,水電管線都要自己接、房子自己蓋。</strong>房東只負責把地租給您、確保地基穩固,剩下的統統自己來。這是 <strong>IaaS(基礎設施即服務)</strong>——供應商只提供最底層的運算資源(像虛擬的電腦、儲存空間),作業系統、軟體全部要自己裝、自己維護。</p>
+    <p>三種方式,租金結構和自由度都不同。裝潢好的公寓最貴但最省事;空地最便宜但什麼都要自己張羅。企業選哪一種,通常看:想要多少控制權,又願意花多少心力自己維護。</p>
+    <p>回到開頭的情境。如果 Northstar 用的 CRM 是 SaaS,系統變慢,他們能做的通常只有回報廠商、查看廠商的服務狀態頁面。如果是自己在 IaaS 上架設的系統,IT 團隊反而有更多可以自己排查的空間。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:16%;">名詞</th><th>供應商負責</th><th>企業自己負責</th></tr>
+      <tr><td><strong>SaaS</strong></td><td>應用程式、平台、作業系統、硬體——全部</td><td>帳號設定、資料內容、使用方式</td></tr>
+      <tr><td><strong>PaaS</strong></td><td>平台、作業系統、硬體</td><td>在平台上開發、部署的應用程式</td></tr>
+      <tr><td><strong>IaaS</strong></td><td>硬體(運算、儲存、網路資源)</td><td>作業系統、平台、應用程式——幾乎全部</td></tr>
+    </table>
+    <p>另外補充一組常聽到的詞:<strong>Cloud(雲端)</strong>指資源放在供應商的資料中心,透過網路存取;<strong>On-premises(地端)</strong>指企業自己買硬體、放在自己機房裡管理。SaaS/PaaS/IaaS 都是 Cloud 的形態,On-premises 則是完全自己扛的傳統做法。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>同一張需求,三種負責方式</h2>
+    <p>假設 Northstar 需要「一套客戶關係管理系統」,三種形態下的負責範圍:</p>
+<pre>SaaS 情境:直接訂閱 CRM System,登入帳號就開始用
+           → 供應商負責整套系統的運作與維護
+
+PaaS 情境:企業的工程師在雲端平台上,寫程式做一套客製化 CRM
+           → 供應商負責平台穩定,企業負責自己寫的程式邏輯
+
+IaaS 情境:企業租用雲端虛擬機器,自己在上面安裝作業系統、資料庫、CRM 軟體
+           → 供應商只負責硬體資源,其餘都是企業的 IT 團隊在扛</pre>
+    <p>三種情境用的都是「雲端」,但企業要花的維護心力天差地遠。多數中小企業導入 CRM,走的是第一種 SaaS,這也是為什麼「系統變慢只能等廠商」是很常見的處境。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:判斷問題該找誰</h3>
+    <p>客戶抱怨系統慢或出錯,先確認這套系統是 SaaS、PaaS 還是 IaaS。SaaS 的話,第一步是查供應商的服務狀態頁面、開工單;如果是企業自己在 IaaS 上架的系統,IT 團隊自己就能先查伺服器資源使用率。找對層級,才不會浪費時間互相踢皮球。</p>
+    <h3>場景二:設定客戶對「客製化」的期待</h3>
+    <p>SaaS 系統通常只能在供應商允許的範圍內客製化,不能像 PaaS 或 IaaS 那樣完全重寫邏輯。提早讓客戶知道這個界線,能避免專案後期才發現「這個需求在目前的方案下做不到」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>控制權和維護責任成反比</h2>
+    <h3>概念一:管得越少,自由度也越低</h3>
+    <p>SaaS 最省心,但客製化空間也最小,規則都是供應商定的。IaaS 什麼都能自己掌控,但也代表什麼都要自己維護。中間的 PaaS 是折衷:不用管硬體和作業系統,但邏輯完全自己寫。</p>
+    <h3>概念二:三者都是「用網路存取別人的資源」</h3>
+    <p>不管哪一種,企業都不需要自己買機器、接電線,這是雲端服務共同的價值:把资本支出換成隨用隨付的服務費用。差別只在於「這份服務往上包到哪一層」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>選型不是比誰更先進,是比誰更適合</h2>
+    <h3>概念三:多數企業應用系統走 SaaS</h3>
+    <p>CRM、行銷平台、客服系統這類標準化程度高的需求,大多數企業會直接選 SaaS,省下自建和維護的成本。這也是為什麼您接觸的企業應用顧問工作,大部分時間是在 SaaS 系統裡打轉。</p>
+    <h3>概念四:On-premises 不是過時,是另一種選擇</h3>
+    <p>某些對資料存放位置有嚴格法規要求的產業,仍然會選擇部分系統留在地端。這不代表地端過時,而是每種選擇都有適合的情境,顧問的工作是理解客戶的限制,而不是預設雲端永遠是對的答案。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>SaaS vs Web App</td><td>Web App 說的是「這個應用程式是網頁形式」;SaaS 說的是「這套軟體用訂閱方式取得、供應商包辦維護」。多數 SaaS 產品剛好也是 Web App 形式,但兩個詞回答的是不同的問題。</td></tr>
+      <tr><td>Cloud vs On-premises</td><td>Cloud 是資源放在供應商的資料中心,透過網路使用;On-premises 是企業自己買硬體、放自己機房。SaaS/PaaS/IaaS 都屬於 Cloud 的子分類。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的三套系統</h2>
+    <p>Northstar 的 IT 環境裡,同時存在三種形態:</p>
+<pre>CRM System:訂閱知名廠商的雲端服務,登入帳號就能用          → SaaS
+內部客製化的訂單處理程式:工程團隊在雲端平台上開發部署        → PaaS
+資料倉儲(Data Warehouse):IT 團隊自己租用雲端虛擬機器架設   → IaaS</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>三個雲端供應商、Northstar 的 IT 團隊、各系統的使用者。</li>
+      <li><strong>資料如何移動?</strong>三套系統各自對外部使用者或內部團隊提供服務,彼此之間也可能互相整合(單元 6 會教)。</li>
+      <li><strong>各系統負責什麼?</strong>SaaS 供應商包辦一切;PaaS 供應商包平台,IT 團隊管程式邏輯;IaaS 供應商只給硬體資源,其餘都是 IT 團隊的事。</li>
+      <li><strong>哪裡可能出錯?</strong>如果 IT 團隊誤以為資料倉儲(IaaS)出問題時廠商會主動處理,可能會延誤排查時間——這一層的維護責任在自己身上。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先確認出問題的系統是哪一種形態,再決定第一步該查自己的伺服器監控,還是該去查供應商的服務狀態頁。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:22%;">通用概念</th><th>常見產品範例</th></tr>
+      <tr><td>SaaS</td><td>Salesforce、HubSpot、Microsoft 365</td></tr>
+      <tr><td>PaaS</td><td>Salesforce Platform(Apex/Flow 的開發環境)、Heroku</td></tr>
+      <tr><td>IaaS</td><td>AWS EC2、Microsoft Azure 虛擬機器、Google Compute Engine</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「雲端服務出問題,一定是廠商的錯」</h3>
+    <p>要看是哪一層出問題。如果是自己在 PaaS 上寫的程式邏輯有 Bug,那是企業自己的責任,不是平台供應商的問題。</p>
+    <h3>誤解二:「用了 SaaS,就完全不用管資料安全」</h3>
+    <p>SaaS 供應商負責平台的安全性,但誰能存取哪些資料、權限怎麼設定,通常還是企業自己要負責管理。責任邊界要問清楚,不能一概而論。</p>
+    <h3>誤解三:「PaaS 和 IaaS 差不多,反正都要自己寫程式」</h3>
+    <p>PaaS 已經幫您把作業系統、執行環境準備好了,IaaS 則是連作業系統都要自己裝。兩者要維護的深度差很多,選錯形態可能讓團隊背上不必要的維運負擔。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「系統異常,不知道找誰」的判斷順序</h2>
+    <ol>
+      <li><strong>確認這套系統的雲端形態。</strong>是 SaaS、PaaS 還是 IaaS?這決定了責任邊界。</li>
+      <li><strong>如果是 SaaS,先查供應商的服務狀態頁面。</strong>許多廠商都有公開的系統狀態網頁,能快速確認是不是全面性的服務中斷。</li>
+      <li><strong>如果是 PaaS,先確認是平台問題還是自己程式的問題。</strong>可以請工程師查應用程式的錯誤紀錄。</li>
+      <li><strong>如果是 IaaS,先查伺服器本身的資源使用狀況。</strong>CPU、記憶體、網路流量是否異常。</li>
+      <li><strong>都查不出問題時,再向對應層級的供應商開工單。</strong>提供清楚的異常時間與現象,加速對方協助。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>SaaS、PaaS、IaaS 差別在供應商幫您管到哪一層,自己還要管哪一層。</li>
+      <li>SaaS 最省心但客製化最少;IaaS 自由度最高但維護責任也最重;PaaS 在中間。</li>
+      <li>多數企業應用系統(CRM、行銷平台)走 SaaS,這也是顧問最常接觸的形態。</li>
+      <li>系統出問題,先確認是哪一種形態,才知道第一步該查自己還是查供應商。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 1/4</span>
+    <h2>企業直接訂閱一套 CRM,登入帳號就能用,不用管底層任何東西,這是哪一種形態?</h2>
+    <button class="opt" data-val="A" type="button">A. SaaS</button>
+    <button class="opt" data-val="B" type="button">B. PaaS</button>
+    <button class="opt" data-val="C" type="button">C. IaaS</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。供應商包辦應用程式、平台、作業系統與硬體,企業只需要使用軟體本身,這是 SaaS 的定義。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:用了雲端 SaaS 服務,企業就完全不用管誰能存取哪些資料。</h2>
+    <button class="opt" data-val="A" type="button">是,供應商全包了</button>
+    <button class="opt" data-val="B" type="button">否,權限與資料管理通常仍是企業的責任</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。SaaS 供應商負責平台本身的安全性,但誰能存取哪些資料、權限如何設定,通常還是企業自己的責任。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>企業租用雲端虛擬機器,自己安裝作業系統、資料庫和應用程式,這是哪一種形態?</h2>
+    <button class="opt" data-val="A" type="button">A. SaaS</button>
+    <button class="opt" data-val="B" type="button">B. PaaS</button>
+    <button class="opt" data-val="C" type="button">C. IaaS</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。供應商只提供最底層的硬體資源,作業系統以上的一切都要企業自己安裝維護,這是 IaaS 的特徵。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶訂閱的 SaaS 型 CRM 系統回應變慢,IT 主管的第一步應該是?</h2>
+    <button class="opt" data-val="A" type="button">A. 立刻重新安裝作業系統</button>
+    <button class="opt" data-val="B" type="button">B. 查看供應商的服務狀態頁面,確認是否為全面性問題</button>
+    <button class="opt" data-val="C" type="button">C. 自己去檢查供應商機房的伺服器硬體</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。SaaS 形態下,底層硬體和平台都是供應商負責,企業自己能做的第一步就是查看供應商公開的服務狀態,而不是動手處理底層設備。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,第四章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案用的是哪一種雲端形態?系統出問題時,團隊習慣先找誰?這個習慣跟形態相符嗎?</div>
+    <p>下一章我們會談測試環境與正式環境——為什麼工程師總是說「不能直接改 Production」。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch1-5.html">前往下一章：1-5 測試環境與正式環境 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '1-4';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

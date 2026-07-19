@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1-7 企業系統如何互相合作｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 1 ・ 第 7 章｜企業系統如何互相合作 — 依賴關係與資料流</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>企業系統如何互相合作<br>依賴關係與資料流</h2>
+    <p class="lead">預估 30 分鐘 ・ 單元 1 的最後一章,會用到前六章的所有觀念。</p>
+    <p>恭喜您走到單元 1 的最後一章。前面六章,我們分別學了系統的三層架構、Client/Server 角色、三種前端形式、雲端服務形態、五種環境,還有資料傳遞的時機。這一章要把它們兜起來,看一家企業裡好幾個系統是怎麼分工合作的。</p>
+    <ul>
+      <li>看懂企業裡多個系統之間的依賴關係。</li>
+      <li>初步理解「以誰為準」這個概念的重要性。</li>
+      <li>面對一張系統關係圖時,知道該怎麼開始看。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「客戶資料到底存在哪裡?」</h2>
+    <p>Northstar Electronics 的新進顧問,第一天上工就被問倒:</p>
+    <div class="bubble">「我們同一個客戶的資料,官網、CRM、ERP 裡都有一份,如果三邊不一樣,要以哪一邊為準?」</div>
+    <p>這個問題聽起來很進階,但答案其實藏在一個很基本的認知裡:企業很少只有一個系統。多數企業會有好幾個系統各司其職,資料在它們之間流動、複製,彼此依賴。搞懂這張「系統關係網」,是顧問看懂任何一個專案的起點。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>一間公司裡的不同部門</h2>
+    <p>想像一家公司裡,業務部、倉庫、財務部各自有自己的辦公室,做各自的事,但常常需要互相傳遞資訊:業務部談成訂單,要通知倉庫出貨;倉庫出貨後,要通知財務部請款。沒有一個部門能單獨完成整件事,大家都在等別人先做完自己那一段。</p>
+    <p>企業系統也是這樣。<strong>CRM System</strong> 像業務部,負責客戶關係與銷售;<strong>ERP</strong> 像財務與倉儲中樞,負責訂單履行與帳務;<strong>Marketing Platform</strong> 像行銷部,負責對外溝通與名單經營。每個系統各有專長,沒有一個系統包辦所有事。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      多系統不是「重複建設」,是分工。就像公司不會叫業務部順便管倉庫,系統也是各司其職,靠彼此溝通合作。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>誰的說法才算數</h2>
+    <p>部門之間分工難免有交集的資料。業務部和財務部可能都記著同一位客戶的聯絡電話,萬一某天客戶換了電話,只跟業務部說,財務部的紀錄沒更新,兩邊資料就對不上了。這時候,公司需要一個規則:「聯絡資訊以業務部(CRM)登記的為準」。</p>
+    <p>這個「以誰為準」的角色,系統世界裡有個正式名稱,叫 <strong>System of Record(紀錄系統)</strong>——針對某一類資料,被指定為「權威版本」的那個系統。其他系統即使也存了一份,遇到不一致時,都要以這個系統的內容為準。</p>
+    <p>回到開頭新進顧問的問題。答案不是「猜哪個系統比較新」,而是要先確認:針對客戶聯絡資訊這類欄位,企業內部有沒有明確指定哪個系統是 System of Record。這個概念在單元 5 會更深入教,這裡先建立初步印象就好。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>幾個關鍵名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:26%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>系統依賴</strong></td><td>一個系統的運作或資料,需要仰賴另一個系統提供的資訊或服務</td></tr>
+      <tr><td><strong>資料流</strong></td><td>資料從一個系統產生,流向其他系統的路徑與方向</td></tr>
+      <tr><td><strong>System of Record<br>紀錄系統</strong></td><td>針對特定資料類別,被指定為權威、正確版本的系統</td></tr>
+    </table>
+    <p>這三個詞會一直出現在您接下來的顧問工作裡。「依賴」和「資料流」讓您看懂一張系統關係圖;「System of Record」讓您在資料對不上時,知道該以哪邊為準。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>Northstar Electronics 的系統關係網</h2>
+    <p>把 Northstar 常見的幾個系統畫成關係圖:</p>
+<pre>Corporate Website(官網)
+   ↓ 訪客留下名單資料
+Marketing Platform(行銷平台)
+   ↓ 名單轉換為銷售機會
+CRM System
+   ↓ 訂單成立,通知履行
+ERP(訂單、庫存、財務)
+   ↓ 出貨與帳務資料
+Data Warehouse(資料倉儲,匯總所有系統資料做報表)</pre>
+    <p>資料像接力賽一樣,一棒接一棒往下傳。每一段箭頭,背後可能是單元 6 會教的 API、單元 7 會教的 Webhook,或是最簡單的批次匯入(1-6 剛教過的批次處理)。這一章您不需要記住是哪一種技術,只需要看懂:<strong>資料是有方向的,而且每個系統都依賴上一棒是否順利完成。</strong></p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:回報問題時,先定位是哪一棒斷了</h3>
+    <p>客戶說「ERP 裡看不到某筆訂單」,懂得資料流的您會先問:「這筆訂單有在 CRM System 裡看到嗎?」如果 CRM 裡也沒有,問題可能發生在更早的環節(例如行銷平台的名單沒轉成銷售機會);如果 CRM 有、ERP 沒有,問題就縮小到這兩者之間的傳遞環節。</p>
+    <h3>場景二:需求訪談時,先問清楚資料的來源與去向</h3>
+    <p>客戶要求「這個欄位也要出現在報表裡」時,先確認這個欄位的資料原本是哪個系統產生的、需要流過哪些系統才能到報表工具。畫出這條路徑,才能準確估算工作範圍。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>系統關係圖的兩個閱讀方式</h2>
+    <h3>概念一:先看資料從哪裡「出生」</h3>
+    <p>每一筆資料都有一個最初產生它的地方。看系統關係圖時,先找出這個「起點」,通常是使用者最初填寫資料、或系統最初建立紀錄的地方。這個起點往往就是最該信任的資料來源。</p>
+    <h3>概念二:再看資料往哪裡「流動」</h3>
+    <p>從起點開始,順著箭頭看資料流向哪些系統。每流過一個系統,都可能被加工、轉換或補充(單元 5 會教 Field Mapping 這個概念)。清楚流向,才能判斷某個問題是發生在流動的哪一段。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>依賴關係,決定了問題會怎麼擴散</h2>
+    <h3>概念三:上游出問題,下游會跟著出問題</h3>
+    <p>如果資料的起點(上游)發生錯誤,依賴它的所有下游系統都可能跟著出錯或缺資料。這也是為什麼排查問題時,常常建議「先確認最源頭的資料是否正確」,而不是急著在下游系統裡找答案。</p>
+    <h3>概念四:System of Record 是解決資料衝突的錨點</h3>
+    <p>當兩個系統的同一筆資料不一致時,不需要靠猜的,先確認企業有沒有明確指定哪個系統是這類資料的 System of Record。這個角色的存在,就是為了在衝突發生時,有一個可以依循的答案。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>資料流 vs 系統依賴</td><td>資料流講的是「資料實際怎麼移動」的路徑;系統依賴講的是「一個系統的正常運作,需不需要仰賴另一個系統」。資料流是看得到的移動軌跡,依賴是背後的關係結構。</td></tr>
+      <tr><td>System of Record vs 「最新的資料」</td><td>System of Record 是企業事先指定的權威來源,不是看哪筆資料的更新時間比較新。即使某系統的資料看起來比較新,如果它不是被指定的 System of Record,遇到衝突仍然要以指定的系統為準。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的地址對不上</h2>
+    <p>Northstar 的客服接到客戶反映:「我上次在官網改了送貨地址,怎麼收到的貨還是寄到舊地址?」</p>
+<pre>資料流:官網表單 → Marketing Platform → CRM System → ERP(出貨依據)
+客戶動作:只在官網的「聯絡我們」表單留言說要改地址
+出貨依據:ERP 裡的地址欄位</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>客戶、官網表單、Marketing Platform、CRM System、ERP。</li>
+      <li><strong>資料如何移動?</strong>官網表單的留言,不一定會自動流到 ERP——要看這個表單的設計,是不是真的會觸發地址更新的資料流。</li>
+      <li><strong>各系統負責什麼?</strong>ERP 是出貨作業實際依據的系統,如果地址沒有真正流到 ERP,出貨當然還是用舊地址。</li>
+      <li><strong>哪裡可能出錯?</strong>客戶以為「留言=已更新」,但「聯絡我們」表單可能只是一般客服留言,不是正式觸發地址異動的流程入口。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先確認地址異動正確的入口在哪裡,再確認這筆異動有沒有真正流到 ERP,而不是急著檢討出貨部門送錯貨。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>Salesforce / SaaS 對照</th></tr>
+      <tr><td>系統依賴、資料流</td><td>Salesforce 與外部系統之間的 Integration(整合)架構圖</td></tr>
+      <tr><td>System of Record</td><td>企業常會指定 Salesforce 為客戶關係資料的 System of Record,ERP 則是訂單與財務資料的 System of Record</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「資料只要存在系統裡,就等於所有系統都看得到」</h3>
+    <p>每個系統存的是自己的一份資料,除非有明確的整合機制把資料傳過去,否則系統之間不會自動互通。</p>
+    <h3>誤解二:「哪個系統比較新、比較貴,哪個就是對的」</h3>
+    <p>System of Record 是企業事先決定的規則,跟系統新舊或價格無關。判斷該以誰為準,要看企業內部的資料治理決定,不是憑直覺。</p>
+    <h3>誤解三:「客戶留言說要改資料,系統就會自動更新」</h3>
+    <p>資料異動需要透過正確的入口和資料流才會真正生效。客服留言、電話反映等非正式管道,不一定會觸發系統裡的實際更新。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「資料不一致」的初步檢查順序</h2>
+    <ol>
+      <li><strong>確認涉及哪幾個系統。</strong>把有這筆資料的系統都列出來。</li>
+      <li><strong>確認資料原本的起點在哪裡。</strong>最初是在哪個系統被建立或更新的。</li>
+      <li><strong>確認企業有沒有指定這類資料的 System of Record。</strong>如果沒有明確規則,這本身就是需要提出來討論的問題。</li>
+      <li><strong>沿著資料流,確認異動有沒有真正流到下游系統。</strong>檢查是不是卡在某個環節沒有傳遞成功。</li>
+      <li><strong>把發現回報給對的人。</strong>如果是流程設計的問題(例如客服管道沒有串接更新機制),這通常需要更高層級的討論,而不只是個別案例的修正。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>企業很少只有一個系統,多個系統各司其職,靠資料流互相合作。</li>
+      <li>資料像接力賽一樣,一棒接一棒往下傳,每個系統都依賴上一棒是否順利完成。</li>
+      <li>資料衝突時,判斷該以誰為準,要看企業有沒有指定 System of Record,不是憑系統新舊或直覺。</li>
+      <li>排查資料問題,先確認資料的起點,再沿著資料流找出問題卡在哪一段。</li>
+    </ol>
+    <p>恭喜您完成單元 1!您現在已經有了系統三層架構、Client/Server 角色、三種前端形式、雲端服務形態、五種環境、資料傳遞時機,還有系統依賴關係,一共七把觀察企業系統的工具。下一單元,我們會深入網路和 Web 運作的細節。</p>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>針對某一類資料,被企業指定為「權威、正確版本」的系統,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Data Warehouse</button>
+    <button class="opt" data-val="B" type="button">B. System of Record</button>
+    <button class="opt" data-val="C" type="button">C. Production</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。System of Record 就是針對特定資料類別,被指定為權威、正確版本的系統。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:資料判斷該以哪個系統為準,應該看哪個系統的資料「看起來比較新」。</h2>
+    <button class="opt" data-val="A" type="button">是,新的資料比較可信</button>
+    <button class="opt" data-val="B" type="button">否,要看企業有沒有指定 System of Record</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。System of Record 是企業事先決定的規則,跟資料看起來新不新無關,判斷時要依循這個規則,而不是憑感覺。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>客戶回報「ERP 裡看不到某筆訂單」,想確認問題卡在哪一段,第一步該怎麼做?</h2>
+    <button class="opt" data-val="A" type="button">A. 確認這筆訂單有沒有在資料流的上游系統(如 CRM)出現過</button>
+    <button class="opt" data-val="B" type="button">B. 直接在 ERP 裡手動新增這筆訂單</button>
+    <button class="opt" data-val="C" type="button">C. 通知 ERP 供應商說系統壞了</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。先確認資料在上游系統是否存在,能快速定位問題是發生在資料產生的源頭,還是傳遞過程中的某一段。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶說「我跟客服留言要改地址了,為什麼出貨還是用舊地址」。最可能的原因是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. ERP 系統整個故障了</button>
+    <button class="opt" data-val="B" type="button">B. 客戶記錯了自己的地址</button>
+    <button class="opt" data-val="C" type="button">C. 客服留言可能不是正式觸發地址更新的資料流入口</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。客服留言等非正式管道,不一定會觸發系統裡實際的資料更新流程,要先確認正確的異動入口在哪裡。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本單元完成</span>
+    <h2>辛苦了,單元 1 全部讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有幾個系統彼此依賴?針對客戶最核心的那筆資料(例如聯絡資訊),企業有沒有明確講過哪個系統是 System of Record?</div>
+    <p>接下來是單元 2:網路與 Web 運作基礎。我們會從網址、DNS 開始,深入認識 1-2 提過的「一問一答」,實際上是怎麼在網路上發生的。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '1-7';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

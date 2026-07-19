@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-5 HTTPS、Certificate 與安全傳輸｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 5 章｜HTTPS、Certificate 與安全傳輸</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>HTTPS、Certificate<br>與安全傳輸</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 2-1、2-2 再來。</p>
+    <p>網址前面的那個小鎖頭圖示,還有 2-1 提過的 <code>https://</code>,到底在保護什麼?這一章要把「安全傳輸」這件事講清楚,也會提到一個之後常會遇到的麻煩:憑證過期。</p>
+    <ul>
+      <li>說明 HTTPS 比 HTTP 多做了什麼事。</li>
+      <li>理解 Certificate(憑證)在這個過程中扮演的角色。</li>
+      <li>知道憑證過期時,系統會出現什麼樣的警訊。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「網站突然跳出『不安全』的警告」</h2>
+    <p>Northstar Electronics 的官網某天早上,訪客打開網站時,瀏覽器跳出一則警告畫面,寫著「您的連線不是私人連線」。行銷同仁緊張地問:</p>
+    <div class="bubble">「網站被駭客入侵了嗎?怎麼瀏覽器說不安全?」</div>
+    <p>先別緊張,這種情況最常見的原因,其實跟入侵完全無關,而是這一章要教的「憑證過期」。理解 HTTPS 和 Certificate 的運作方式,您就能一眼看出這是個需要盡快處理、但性質完全不同的問題。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>寄明信片,還是寄加密信件</h2>
+    <p>想像您要寄一份重要文件。第一種方式,是寫在明信片上直接投遞——路上經手的每個郵差,都能輕易看到內容。這就像 <strong>HTTP</strong>:資料在傳輸過程中是「明碼」的,理論上路徑中間的人可以偷看到內容。</p>
+    <p>第二種方式,是把文件放進一個加了密碼鎖的信封,只有收件人才有鑰匙打得開。這就是 <strong>HTTPS(HTTP Secure)</strong>——在 HTTP 的基礎上,多加了一層加密,讓資料在傳輸過程中即使被攔截,也無法直接被看懂內容。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      HTTPS 不是另一套全新的協定,是 HTTP 加上一層加密的保護。這也是為什麼網址前面看到 <code>https://</code>,而不是完全不同的字。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>那把鎖上鑰匙的信封,鑰匙從哪裡來</h2>
+    <p>問題來了:加密信封需要一把鑰匙,這把鑰匙要怎麼證明是「真正屬於這個網站」的,而不是別人假冒的?這裡需要一個公正的第三方來擔保。</p>
+    <p><strong>Certificate(憑證)</strong>就像是網站的「身分證」,由公正的發證機構核發,證明「這個網址,確實屬於這家公司,可以放心使用加密通訊」。瀏覽器會檢查這張身分證,如果核對無誤,就顯示那個安全的鎖頭圖示。</p>
+    <p>回到開頭的警告訊息。身分證跟真實信件一樣,是有<strong>使用期限</strong>的。如果 Northstar 官網的憑證過期了,瀏覽器會認為「我沒辦法確認這個網站的身分證是不是還有效」,因此跳出警告,提醒訪客要小心。這不代表網站被入侵,而是「身分證該換發了,卻沒人記得去換」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:22%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>HTTPS</strong></td><td>在 HTTP 的基礎上,加入加密機制的安全傳輸協定</td></tr>
+      <tr><td><strong>SSL/TLS</strong></td><td>實現 HTTPS 加密功能的技術標準,TLS 是 SSL 的後繼版本,一般口語仍常合稱 SSL</td></tr>
+      <tr><td><strong>Certificate<br>憑證</strong></td><td>由公正機構核發,證明某個網域確實屬於特定單位,並支援加密通訊的電子身分證明</td></tr>
+    </table>
+    <p>簡單記憶:HTTPS 是「安全傳輸這件事」,SSL/TLS 是「怎麼做到加密的技術」,Certificate 是「證明身分的那張文件」。三者合作,才構成瀏覽器上那個安心的鎖頭圖示。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>打開一個 HTTPS 網站,背後多做了什麼</h2>
+    <p>接續 2-1 教過的旅程,補上 HTTPS 特有的步驟:</p>
+<pre>1. Browser 透過 DNS 找到 Server 的 IP(2-1 教過)
+2. Browser 向 Server 要求查看它的 Certificate(身分證)
+3. Browser 核對這張 Certificate 是否有效、是否過期、是否真的屬於這個網域
+4. 核對通過,雙方建立加密連線
+5. 接下來的 Request 和 Response,都透過這條加密連線傳輸</pre>
+    <p>第 2、3 步是 HTTPS 特有的,HTTP 沒有這道關卡。多這幾步雖然增加了一點點時間,但換來的是資料傳輸過程中,不容易被中途攔截偷看。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:判斷「網站不安全」警告的真正原因</h3>
+    <p>看到瀏覽器跳出安全警告,先確認是不是憑證過期或設定錯誤,而不是立刻假設遭到入侵。這兩種情況處理的急迫性和方式都不同:憑證問題通常是忘記更新,入侵則需要完全不同層級的資安應變。</p>
+    <h3>場景二:提醒客戶注意憑證到期日</h3>
+    <p>憑證通常有使用期限,需要定期更新。作為顧問,提早提醒客戶留意即將到期的憑證,能避免臨時出現「網站被判定不安全」的尷尬狀況,尤其是在正式上線前的檢查清單裡,這是很值得列入的一項。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>HTTPS 保護的是「傳輸過程」</h2>
+    <h3>概念一:HTTPS 解決的是「中途被偷看或竄改」的風險</h3>
+    <p>資料從 Client 傳到 Server 的路上,可能經過很多中間節點(2-1 提過的網路路徑)。HTTPS 確保即使資料經過這些節點,也不會輕易被讀懂或竄改內容。</p>
+    <h3>概念二:HTTPS 不能保證「網站內容本身」值得信任</h3>
+    <p>HTTPS 只保護傳輸過程的安全,不代表這個網站的內容一定正確或可靠。一個詐騙網站一樣可以申請憑證、使用 HTTPS。看到鎖頭圖示,只代表傳輸過程有加密,不代表這個網站本身沒有問題。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>憑證是有期限的,需要人去維護</h2>
+    <h3>概念三:憑證過期是最常見的「假警報」</h3>
+    <p>比起真正的資安入侵,憑證忘記更新導致的警告訊息,在實務上發生的頻率高出許多。遇到安全警告時,先檢查憑證到期日,往往能快速找到答案。</p>
+    <h3>概念四:憑證的維護責任,通常在 IT 或負責維運的團隊</h3>
+    <p>憑證需要定期更新,如果沒有排入例行檢查或自動化更新機制,很容易因為疏忽而過期。這也是單元 9 之後會再深入教的內容之一——憑證管理跟身分驗證機制息息相關。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>HTTPS vs 「網站內容安全」</td><td>HTTPS 保護的是傳輸過程不被竊聽或竄改;網站內容本身是否可信,是另一回事。看到鎖頭圖示,不代表網站內容一定沒問題。</td></tr>
+      <tr><td>憑證過期 vs 網站遭入侵</td><td>憑證過期通常只是忘記更新這份「身分證」,瀏覽器因此無法確認網站身分而發出警告;遭入侵則是網站本身的內容或系統被惡意操控,兩者性質完全不同,處理方式也不一樣。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的憑證過期事件</h2>
+    <p>追查行銷同仁反映的警告訊息,發現原因如下:</p>
+<pre>官網憑證的有效期限:一年
+上次更新時間:剛好滿一年前
+負責維護的同仁:已經離職,沒有交接這項例行工作
+結果:憑證到期沒人注意到,直到訪客反映警告訊息才被發現</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>官網 Server、憑證發證機構、IT 維運團隊、訪客。</li>
+      <li><strong>資料如何移動?</strong>訪客的 Browser 嘗試核對憑證有效性,發現已過期,因此顯示警告。</li>
+      <li><strong>各角色負責什麼?</strong>IT 團隊原本該負責定期更新憑證,確保不會過期。</li>
+      <li><strong>哪裡可能出錯?</strong>憑證更新是一項容易被忽略的例行工作,尤其在人員異動時,如果沒有明確交接或自動化提醒機制,很容易被遺漏。</li>
+      <li><strong>第一個合理的檢查方向?</strong>看到安全警告,先查憑證的到期日,確認是不是這個常見原因,再考慮是否有更嚴重的資安疑慮。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這個概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>憑證管理</td><td>企業自訂網域串接 Salesforce Experience Cloud 或行銷平台時,同樣需要設定並定期更新 HTTPS 憑證</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「看到瀏覽器安全警告,就代表網站被駭客入侵」</h3>
+    <p>最常見的原因其實是憑證過期或設定錯誤,不一定跟入侵有關。先查憑證狀態,再考慮更嚴重的可能性。</p>
+    <h3>誤解二:「有 HTTPS 鎖頭圖示,就代表這個網站絕對安全可信」</h3>
+    <p>HTTPS 只保護傳輸過程,不代表網站內容本身值得信任。任何人都可以為自己的網站申請憑證,包括詐騙網站。</p>
+    <h3>誤解三:「憑證申請一次就永久有效」</h3>
+    <p>憑證通常有固定的有效期限,需要定期更新。這是一項需要排入例行維護排程的工作,不是一勞永逸的設定。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「網站出現安全警告」的檢查順序</h2>
+    <ol>
+      <li><strong>確認警告訊息的具體內容。</strong>是提到憑證問題,還是其他類型的警告?</li>
+      <li><strong>查詢這個網域的憑證到期日。</strong>許多線上工具可以快速查詢,或請 IT 團隊確認。</li>
+      <li><strong>確認最近是否有更換網域或伺服器設定。</strong>設定錯誤也可能導致憑證核對失敗。</li>
+      <li><strong>如果憑證確實過期,盡快聯繫負責的 IT 團隊更新。</strong>這通常是可以快速解決的問題。</li>
+      <li><strong>如果排除憑證問題後警告仍然出現,才進一步懷疑資安風險。</strong>這時候需要更專業的資安人員介入排查。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>HTTPS 是在 HTTP 的基礎上加入加密,保護資料在傳輸過程中不被輕易偷看或竄改。</li>
+      <li>Certificate(憑證)像網站的身分證,證明這個網域確實屬於特定單位,並支援加密通訊。</li>
+      <li>憑證有使用期限,過期是造成瀏覽器安全警告最常見的原因,不代表一定遭到入侵。</li>
+      <li>看到安全警告,先查憑證狀態,這往往是成本最低、也最常見的答案。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>HTTPS 相較於 HTTP,主要多做了什麼事?</h2>
+    <button class="opt" data-val="A" type="button">A. 讓網頁畫面變得更漂亮</button>
+    <button class="opt" data-val="B" type="button">B. 為傳輸過程加上加密保護</button>
+    <button class="opt" data-val="C" type="button">C. 讓網站的載入速度變快</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。HTTPS 是在 HTTP 的基礎上,加入加密機制,保護資料在傳輸過程中不被輕易偷看或竄改。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:瀏覽器跳出「連線不安全」的警告,最常見的原因是憑證過期,不一定代表網站遭到入侵。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,只要有警告就一定是被駭客入侵</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。實務上,憑證過期或設定錯誤是造成這類警告最常見的原因,遠比真正的入侵事件常見得多。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>Certificate(憑證)在 HTTPS 的運作中,主要扮演什麼角色?</h2>
+    <button class="opt" data-val="A" type="button">A. 加快網頁載入的速度</button>
+    <button class="opt" data-val="B" type="button">B. 儲存使用者填寫的表單資料</button>
+    <button class="opt" data-val="C" type="button">C. 證明這個網域確實屬於特定單位的身分證明</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Certificate 就像網站的身分證,由公正機構核發,證明這個網域確實屬於特定單位,並支援加密通訊。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:官網突然出現安全警告,行銷同仁很緊張。您的第一個合理檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 立刻對外公告網站遭到入侵</button>
+    <button class="opt" data-val="B" type="button">B. 先查這個網域的憑證是否已經過期</button>
+    <button class="opt" data-val="C" type="button">C. 要求所有員工立刻更換密碼</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。憑證過期是造成安全警告最常見的原因,先確認這一點,能快速釐清狀況,避免不必要的恐慌。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有留意過官網或系統的憑證到期日?這件事目前是誰負責追蹤的?</div>
+    <p>下一章我們會教 Cookie、Session 與 Browser Storage——瀏覽器到底幫我們記住了哪些事情。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-6.html">前往下一章：2-6 Cookie、Session 與 Browser Storage →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-5';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

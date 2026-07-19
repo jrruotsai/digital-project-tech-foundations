@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-2 Data Type、Null 與 Empty String｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 2 章｜Data Type、Null 與 Empty String — 「沒有值」也有學問</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Data Type、Null 與 Empty String<br>「沒有值」也有學問</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-1 再來。</p>
+    <p>上一章結尾留了一個問題:加了新欄位之後,舊資料的那個格子裡是什麼?答案比想像中微妙——「什麼都沒有」在資料庫裡,其實有兩種完全不同的狀態。這一章還會先教一個更基本的概念:每個欄位都有自己的「型別」。</p>
+    <ul>
+      <li>認得常見的 Data Type(資料型別)。</li>
+      <li>分辨 Null 和 Empty String(空字串)的差異。</li>
+      <li>理解為什麼報表統計會因為這兩者而出現落差。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「兩張報表的數字對不起來」</h2>
+    <p>Northstar Electronics 的行銷團隊做了一份統計:「沒有留 Email 的客戶有幾位?」兩位同事各自拉了報表,結果:</p>
+    <div class="bubble">「我拉出來是 3,200 人,你怎麼會是 4,100 人?我們查的是同一張表啊!」</div>
+    <p>兩個人都沒有算錯。差異的來源,是「沒有留 Email」這句話,在資料庫裡其實對應兩種不同的狀態:一種是 Null,一種是空字串。一份報表只算了其中一種,另一份兩種都算。這一章讀完,您就能一眼看出這類數字落差的原因。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>每個欄位,都有自己的「格式規定」</h2>
+    <p>先從 Data Type 說起。想像您在填一張紙本申請表:生日欄要填日期、電話欄要填數字、姓名欄要填文字。如果有人在生日欄寫「藍色」,承辦人員會直接退件——因為格式不對。</p>
+    <p><strong>Data Type(資料型別)</strong>就是資料庫版的「格式規定」。每個欄位在設計時,就決定了它只收哪種資料:</p>
+    <table>
+      <tr><th style="width:26%;">常見型別</th><th>收什麼</th><th style="width:30%;">例子</th></tr>
+      <tr><td>文字(Text/String)</td><td>任意文字</td><td>姓名、地址</td></tr>
+      <tr><td>數字(Number)</td><td>可以計算的數值</td><td>金額、數量</td></tr>
+      <tr><td>日期(Date/Datetime)</td><td>日期或日期加時間</td><td>訂單日期、建立時間</td></tr>
+      <tr><td>布林(Boolean)</td><td>只有真/假兩種值</td><td>是否訂閱電子報</td></tr>
+    </table>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      型別決定了「能填什麼」和「能拿它做什麼」。數字能加總,文字不能;日期能比較先後,文字型的「日期」不能。型別選錯,之後統計和排序都會出問題。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>「從來沒填過」和「填了一個空白」</h2>
+    <p>回到「沒有值」的問題。想像申請表上的 Email 欄位,有兩種「看起來都是空的」狀況:</p>
+    <p><strong>第一種:這格從來沒被碰過。</strong>申請人跳過了這一欄,紙上什麼都沒有。這是 <strong>Null</strong>——代表「未知、從未填寫」,是一種「沒有資料」的狀態。</p>
+    <p><strong>第二種:申請人拿筆在這格畫了一條橫線,表示「我沒有 Email」。</strong>這格其實「被填過了」,填的內容是「空」。這是 <strong>Empty String(空字串)</strong>——欄位裡確實存了一個值,只是那個值是長度為零的文字。</p>
+    <p>肉眼看報表,兩種都是空格子。但對資料庫來說,它們是不同的東西:查詢「Email 是 Null 的客戶」不會抓到空字串的那些;查「Email 是空字串的」也不會抓到 Null 的。開頭那兩位同事的數字落差,正是一位只查了 Null,另一位把兩種都算進去了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:26%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Data Type<br>資料型別</strong></td><td>欄位在設計時定義的資料格式,決定這個欄位能存放哪種資料、能進行哪些運算</td></tr>
+      <tr><td><strong>Null</strong></td><td>代表「沒有值、未知」的特殊狀態;這個欄位從未被賦值,或被明確設為未知</td></tr>
+      <tr><td><strong>Empty String<br>空字串</strong></td><td>長度為零的文字值;欄位「有被填過」,只是填入的內容是空的</td></tr>
+    </table>
+    <p>一句話區分:Null 是「這格沒有東西」,空字串是「這格有東西,那個東西是『空白』」。聽起來像繞口令,但這個差異在查詢、統計、資料同步時,都會實實在在地影響結果。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>同一張表,三種 Email 狀態</h2>
+    <p>看 Northstar 的 Customer Table 裡三筆紀錄:</p>
+<pre>客戶編號  姓名    Email
+C001     王小明  wang@example.com   ← 有值
+C002     李美麗  (Null)             ← 從未填過
+C003     陳大文  ""(空字串)          ← 匯入時被填入了空白</pre>
+    <p>C003 的空字串是怎麼來的?常見的來源是<strong>資料匯入</strong>:匯入檔案裡那一格是空白,匯入程式把「空白」如實寫了進去,於是欄位裡存了一個空字串,而不是 Null。這也是為什麼老系統轉移資料後,同一個欄位常常混雜著 Null 和空字串兩種狀態——它們來自不同的資料來源和寫入方式。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:解釋報表數字對不上的原因</h3>
+    <p>兩份「理應相同」的統計數字有落差時,Null 與空字串的處理差異是常見嫌疑犯之一。您可以直接問工程師:「這兩份報表對『沒有值』的定義一樣嗎?有沒有一份只算了 Null?」這一問常常直接命中。</p>
+    <h3>場景二:資料匯入與同步前的規格確認</h3>
+    <p>做系統轉移或整合時,先和雙方確認:「來源欄位是空的時候,要寫成 Null 還是空字串?」這個小約定沒講清楚,轉移後的資料就會出現兩種混雜的「空」,日後每一份統計都要多做一層處理。單元 5 會再深入這個主題(Null 是否可以覆蓋原值)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>型別決定資料的能力</h2>
+    <h3>概念一:數字存成文字,就失去了計算能力</h3>
+    <p>如果金額欄位被設成文字型別,裡面存的「1000」只是三個字元,不能直接加總,排序時「9」還會排在「10」後面(因為文字是逐字比較的)。遇到「排序怪怪的」「加總算不出來」,先問一句:「這個欄位的型別是什麼?」</p>
+    <h3>概念二:日期型別讓「先後」有意義</h3>
+    <p>日期存成正確的日期型別,才能做「找出上個月的訂單」這類查詢。存成文字的日期(尤其格式不一,像 2026/7/1 和 07-01-2026 混用)是資料清理的惡夢,這在單元 5 會再遇到。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>「空」的兩張面孔</h2>
+    <h3>概念三:Null 参與計算時,行為很特別</h3>
+    <p>資料庫處理 Null 有一套特殊規則,例如「Null 不等於任何值,連另一個 Null 都不等於」。您不需要背這些規則,只要記得:<strong>查詢條件遇到 Null,結果常常跟直覺不同</strong>,這是請工程師確認查詢邏輯時的重要提示。</p>
+    <h3>概念四:混雜的「空」是系統整合的常見地雷</h3>
+    <p>不同系統對「空」的表示方式不同:有的用 Null,有的用空字串,有的甚至用「N/A」這種文字。整合時如果沒有統一處理,下游的統計、去重、比對全都會受影響。發現資料怪怪的,把「空值的表示方式」列入檢查清單。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Null vs Empty String</td><td>Null 是「從未有值」的狀態;空字串是「有值,但值是空白文字」。畫面上看起來一樣,查詢時是兩種不同條件。</td></tr>
+      <tr><td>「數字 1000」vs「文字 1000」</td><td>數字型別的 1000 可以加總、正確排序;文字型別的 "1000" 只是四個字元。畫面上顯示一模一樣,能力完全不同。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的報表落差調查</h2>
+    <p>回到開頭的統計落差,追查結果:</p>
+<pre>問題:「沒有留 Email 的客戶數」兩份報表分別是 3,200 與 4,100
+報表 A 的條件:Email 是 Null                    → 3,200 筆
+報表 B 的條件:Email 是 Null 或 空字串           → 4,100 筆
+空字串的來源:三年前從舊系統匯入的那批資料,
+             匯入程式把空白格寫成了空字串</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>兩位拉報表的同事、Customer Table、三年前的匯入程式。</li>
+      <li><strong>資料如何移動?</strong>舊系統轉移時,空白欄位被寫成空字串;之後系統內新建的客戶若未填 Email 則是 Null。</li>
+      <li><strong>各部分負責什麼?</strong>報表條件的定義,決定了哪些「空」被算進去。</li>
+      <li><strong>哪裡可能出錯?</strong>沒有人「算錯」,是兩份報表對「沒有 Email」的定義不同。真正的問題是資料裡混雜著兩種「空」。</li>
+      <li><strong>第一個合理的檢查方向?</strong>數字對不上時,先比對兩份報表的篩選條件,特別是對 Null 與空字串的處理方式是否一致。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>Data Type</td><td>Field Type:Text、Number、Date、Checkbox、Picklist 等</td></tr>
+      <tr><td>Null / 空值處理</td><td>報表篩選的「等於空值」條件;資料匯入工具對空白格的處理設定</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「畫面上是空的,資料庫裡就是 Null」</h3>
+    <p>畫面上的空格,背後可能是 Null,也可能是空字串,甚至是只有空格字元的文字。要確認真實狀態,得看資料庫裡實際存了什麼。</p>
+    <h3>誤解二:「型別以後可以隨便改,先隨便選一個沒關係」</h3>
+    <p>欄位有了大量資料之後再改型別,常常需要資料轉換,甚至有轉換失敗的風險。型別在設計時就該選對,這是需求訪談時值得花時間確認的細節。</p>
+    <h3>誤解三:「Null 就是零」</h3>
+    <p>數字欄位的 Null 是「未知」,不是 0。一筆訂單金額是 Null,代表金額沒被記錄;是 0,代表這筆訂單確實是零元。統計平均值時,兩者的影響完全不同。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「報表數字對不上」的檢查順序</h2>
+    <ol>
+      <li><strong>確認兩份報表查的是不是同一張表、同一個時間範圍。</strong>先排除最基本的差異。</li>
+      <li><strong>比對兩份報表的篩選條件。</strong>特別是「空值」的定義:只算 Null,還是 Null 加空字串?</li>
+      <li><strong>確認欄位裡是否混雜著多種「空」。</strong>可以請工程師分別統計 Null 和空字串的筆數。</li>
+      <li><strong>追查混雜的來源。</strong>通常是某次資料匯入或某條整合寫入方式不同。</li>
+      <li><strong>訂出統一規則。</strong>之後的報表都用同一種空值定義,必要時安排一次資料清理(單元 5 會教)。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>每個欄位都有 Data Type,型別決定了能填什麼、能拿資料做什麼。</li>
+      <li>Null 是「從未有值」,空字串是「有值但內容是空白」,畫面上看起來一樣,查詢時完全不同。</li>
+      <li>混雜的「空」通常來自不同的資料來源與寫入方式,是報表數字對不上的常見原因。</li>
+      <li>資料匯入或整合前,先約定「空的時候寫什麼」,能省下日後大量的清理工作。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>欄位「從未被填過任何值」的狀態,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Empty String</button>
+    <button class="opt" data-val="B" type="button">B. Null</button>
+    <button class="opt" data-val="C" type="button">C. Zero</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。Null 代表「沒有值、未知」;空字串則是有被填過,只是填入的內容是空白文字。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:數字欄位裡的 Null,和 0 是同一個意思。</h2>
+    <button class="opt" data-val="A" type="button">是,都代表沒有</button>
+    <button class="opt" data-val="B" type="button">否,Null 是「未知」,0 是一個確定的數值</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。Null 代表金額沒被記錄(未知),0 代表金額確定是零。統計平均值時,兩者的影響完全不同。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>金額欄位被設成「文字」型別,最可能造成什麼問題?</h2>
+    <button class="opt" data-val="A" type="button">A. 資料會自動消失</button>
+    <button class="opt" data-val="B" type="button">B. 畫面上看不到金額</button>
+    <button class="opt" data-val="C" type="button">C. 無法直接加總,排序結果也會不符合數字大小</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。文字型別的「1000」只是字元,不能直接計算;文字排序是逐字比較,「9」會排在「10」後面。型別決定了資料的能力。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:兩份查同一張表的報表,「沒有 Email 的客戶數」差了 900 筆。第一個合理的檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 比對兩份報表對「空值」的定義:是否一份只算 Null、另一份連空字串也算</button>
+    <button class="opt" data-val="B" type="button">B. 直接把兩個數字平均起來當答案</button>
+    <button class="opt" data-val="C" type="button">C. 認定資料庫壞了,要求重建</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。同一張表的統計出現落差,最常見的原因是篩選條件對 Null 與空字串的處理不同,先比對條件定義就能快速找到答案。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上專案的系統裡,挑一個常用的欄位,猜猜它的型別是什麼?它有沒有可能同時混著 Null 和空字串兩種「空」?</div>
+    <p>下一章要回答一個更關鍵的問題:每筆紀錄要怎麼被「唯一地認出來」——Primary Key 為什麼不能隨便選。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-3.html">前往下一章：4-3 Primary Key 與 Unique Key →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-2';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-1 資料表、欄位與紀錄｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 1 章｜資料表、欄位與紀錄 — 資料庫的基本單位</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎來到單元 4</span>
+    <h2>資料表、欄位與紀錄<br>資料庫的基本單位</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-1(三層架構)再來。</p>
+    <p>1-1 教過,資料庫是系統的「長期記憶」。從這一章開始,我們要打開這個記憶櫃,看看裡面到底是怎麼收納的。好消息是:如果您用過 Excel,您已經懂一半了。</p>
+    <ul>
+      <li>分辨 Database、Table、Column、Row 這四個基本單位。</li>
+      <li>看懂一張簡單的資料表。</li>
+      <li>聽到客戶說「幫我加一個欄位」時,知道這句話在資料庫裡代表什麼。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「就加一個欄位而已,應該很簡單吧?」</h2>
+    <p>Northstar Electronics 的業務主管在需求會議上說:</p>
+    <div class="bubble">「我想在客戶資料上多記一個『推薦人』,就加一個欄位而已,應該很簡單吧?」</div>
+    <p>「加一個欄位」這句話,顧問幾乎天天聽到。要判斷它到底簡不簡單,您得先知道:欄位是什麼?它加在哪裡?加了之後,已經存在的幾萬筆舊資料會發生什麼事?這一章就從這些最基本的單位開始。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>一個櫃子、幾本名冊</h2>
+    <p>想像公司有一個大檔案櫃,裡面放著好幾本名冊:一本「客戶名冊」、一本「訂單名冊」、一本「產品目錄」。</p>
+    <p><strong>Database(資料庫)</strong>就是那整個檔案櫃——一個有組織地存放所有資料的地方。</p>
+    <p><strong>Table(資料表)</strong>就是櫃子裡的每一本名冊——每本名冊記錄一種特定主題的資料。客戶的資料放在客戶那本,訂單的資料放在訂單那本,不會混在一起。</p>
+    <p>翻開其中一本名冊,它長得就像 Excel 的表格:有欄、有列。這就是接下來要拆的更小單位。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Database 是櫃子,Table 是櫃子裡的一本本名冊。一個資料庫裡通常有很多張資料表,各自負責一種主題的資料。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>直的是欄位,橫的是一筆資料</h2>
+    <p>翻開「客戶名冊」這張表,長這樣:</p>
+    <table>
+      <tr><th>客戶編號</th><th>姓名</th><th>Email</th><th>電話</th></tr>
+      <tr><td>C001</td><td>王小明</td><td>wang@example.com</td><td>0912-345-678</td></tr>
+      <tr><td>C002</td><td>李美麗</td><td>lee@example.com</td><td>0922-111-222</td></tr>
+    </table>
+    <p><strong>Column(欄位)</strong>是直的那一條——「姓名」「Email」「電話」都是欄位。欄位定義了「這張表要記錄哪些種類的資訊」。</p>
+    <p><strong>Row(列),又叫 Record(紀錄)</strong>——是橫的那一條。一列就是一筆完整的資料:C001 王小明那一整列,就是「王小明這位客戶」在系統裡的一筆紀錄。</p>
+    <p>回到開頭的需求:「加一個推薦人欄位」,就是在這張表上多加一條直的——之後每一筆客戶紀錄,都會多一個可以填「推薦人」的格子。聽起來簡單,但有個問題值得馬上想到:<strong>已經存在的 C001、C002 這些舊紀錄,新欄位裡要填什麼?</strong>這正是下一章(Null 與空值)要處理的主題。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>四個基本單位的正式說法</h2>
+    <table>
+      <tr><th style="width:26%;">名詞</th><th>定義</th><th style="width:24%;">比喻</th></tr>
+      <tr><td><strong>Database<br>資料庫</strong></td><td>有組織地儲存、管理多張資料表的系統</td><td>整個檔案櫃</td></tr>
+      <tr><td><strong>Table<br>資料表</strong></td><td>針對單一主題,以欄與列組織資料的結構</td><td>櫃子裡的一本名冊</td></tr>
+      <tr><td><strong>Column<br>欄位</strong></td><td>資料表中定義「要記錄哪種資訊」的直向單位</td><td>名冊的欄目標題</td></tr>
+      <tr><td><strong>Row / Record<br>列/紀錄</strong></td><td>資料表中一筆完整資料的橫向單位</td><td>名冊裡的一行登記</td></tr>
+    </table>
+    <p>這四個詞是整個單元 4 的地基,後面每一章都會用到。如果只想先記兩個,記「欄位是直的、紀錄是橫的」就夠。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>從表單送出,到資料庫裡多一列</h2>
+    <p>把 1-1 教過的資料旅程,接到資料庫的內部:</p>
+<pre>訪客在官網填寫報名表單(姓名、Email)
+→ 後端驗證通過
+→ 資料庫的「報名名單」Table 裡,新增一筆 Record
+→ 這筆 Record 的「姓名」Column 填入王小明
+→ 「Email」Column 填入 wang@example.com</pre>
+    <p>所以「表單送出成功」的具體意思,其實就是「某張 Table 裡多了一列,而且每個欄位都填上了對的值」。之後排查「資料不見了」,最終極的檢查就是:去那張表裡看,那一列到底有沒有出現。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:把需求翻譯成資料的語言</h3>
+    <p>客戶說「我要記錄客戶的推薦人」,您心裡可以立刻翻譯:「客戶 Table 要加一個推薦人 Column」。接著自然會想到該問的問題:推薦人是填文字就好,還是要連到另一筆客戶紀錄?舊資料怎麼辦?這些問題,正是工程師估工時時真正在意的事。</p>
+    <h3>場景二:看懂資料匯入的報錯</h3>
+    <p>做資料匯入時,錯誤訊息常寫著「第 152 列的某欄位格式錯誤」。懂了欄與列,您就知道這是指匯入檔案裡第 152 筆資料的某個欄位有問題,可以直接打開檔案找到那一筆來檢查,不用整批重來。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>一張表,一個主題</h2>
+    <h3>概念一:每張 Table 負責一種主題,不要什麼都塞同一張</h3>
+    <p>客戶資料放客戶表、訂單資料放訂單表。如果把訂單資訊硬塞進客戶表(例如在客戶表上開「訂單1」「訂單2」「訂單3」欄位),很快就會遇到「第 4 筆訂單放哪裡」的窘境。分表存放,再用關聯把它們接起來(4-4 會教),才是資料庫的正規做法。</p>
+    <h3>概念二:欄位是「事先定義」的,不是想填什麼就填什麼</h3>
+    <p>資料表的欄位結構是事先設計好的,每一筆紀錄都遵循同樣的欄位。這跟自由格式的筆記不同——正因為結構固定,系統才能快速查詢、統計、比對。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>改結構和改資料,是兩件不同量級的事</h2>
+    <h3>概念三:新增一筆紀錄很平常,新增一個欄位是「改結構」</h3>
+    <p>每天都有新客戶、新訂單寫進資料表,這是日常的資料異動。但「加一個欄位」是改變表的結構本身,會影響到這張表的每一筆既有紀錄,以及所有用到這張表的程式、報表、整合。這就是為什麼「只是加個欄位」在工程師耳裡,從來不是小事。</p>
+    <h3>概念四:紀錄會成千上萬,結構要盡量穩定</h3>
+    <p>一張客戶表可能有幾十萬筆紀錄,但欄位可能只有二十個。資料天天變,結構最好少動——每次動結構,都要評估對既有資料和下游系統的影響。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Database vs Table</td><td>Database 是整個櫃子,Table 是裡面的一本名冊。說「查資料庫」其實通常是「查資料庫裡的某張表」。</td></tr>
+      <tr><td>Column vs Row(Record)</td><td>Column 是直的、定義資訊種類(姓名、Email);Row 是橫的、一筆完整資料(王小明那一整列)。「加欄位」動的是結構,「加一筆資料」動的是內容。</td></tr>
+    </table>
+    <p>還有一個小提醒:Excel 跟資料表長得像,但 Excel 隨時可以在任何格子亂填,資料表則是結構嚴謹、每筆紀錄都遵循同樣欄位定義。像,但不一樣。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的客戶資料表</h2>
+    <p>Northstar 的 CRM System 背後,客戶資料存放在一張 Customer Table:</p>
+<pre>Customer Table(客戶資料表)
+欄位:客戶編號、姓名、Email、電話、建立日期
+目前紀錄數:約 85,000 筆
+
+業務主管的需求:新增「推薦人」欄位</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>業務主管(需求方)、CRM 管理者、Customer Table 以及依賴它的報表與整合。</li>
+      <li><strong>資料如何移動?</strong>加欄位是改 Table 結構;之後新的客戶紀錄才能開始填推薦人。</li>
+      <li><strong>各部分負責什麼?</strong>Table 結構定義資料長相;既有的 85,000 筆紀錄,新欄位一開始都是空的。</li>
+      <li><strong>哪裡可能出錯?</strong>如果有報表或整合程式假設欄位固定不變,新欄位可能影響它們;而 85,000 筆舊資料的推薦人是空的,統計時要小心解讀。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先問清楚:推薦人要填什麼形式的內容?舊資料需不需要回填?有哪些報表和整合會用到這張表?釐清這三件事,才能正確評估這個「小需求」。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>Table</td><td>Object(物件),例如 Account、Contact</td></tr>
+      <tr><td>Column</td><td>Field(欄位)</td></tr>
+      <tr><td>Row / Record</td><td>Record(紀錄)</td></tr>
+    </table>
+    <p>Salesforce 把資料庫包裝成 Object 與 Field 的形式,但底層邏輯完全相同:加一個 Custom Field,就是在改這個 Object 的結構。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「加欄位很簡單,五分鐘的事」</h3>
+    <p>操作本身可能真的只要五分鐘,但影響評估(舊資料、報表、整合)才是主要的工作量。沒做評估就加欄位,問題往往在幾週後才爆出來。</p>
+    <h3>誤解二:「資料庫就是一張大表,所有東西都在裡面」</h3>
+    <p>資料庫裡是很多張各司其職的表。「客戶的訂單資料」通常不在客戶表裡,而是在訂單表中,靠關聯連起來。查不到資料時,可能只是查錯了表。</p>
+    <h3>誤解三:「Excel 就是資料庫」</h3>
+    <p>Excel 適合個人整理資料,但缺乏資料庫的結構約束、多人同時操作與大量資料處理能力。把 Excel 當正式資料庫用,常是資料品質問題(單元 5 的主題)的起點。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「客戶要求加欄位」的釐清順序</h2>
+    <ol>
+      <li><strong>確認這個欄位要記錄什麼形式的內容。</strong>文字?數字?日期?還是要連到另一筆資料?</li>
+      <li><strong>確認既有的舊紀錄怎麼辦。</strong>需要回填嗎?還是留空即可?</li>
+      <li><strong>確認有哪些報表、畫面、整合會用到這張表。</strong>它們需不需要跟著調整?</li>
+      <li><strong>確認欄位是否已經存在類似的。</strong>避免重複建立意義相近的欄位,造成日後混亂。</li>
+      <li><strong>把以上資訊整理好,再和工程師討論工時。</strong>這時候的估計才會準。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Database 是櫃子,Table 是名冊,Column 是直的欄目,Row(Record)是橫的一筆資料。</li>
+      <li>一張表負責一種主題;不同主題的資料分表存放,再靠關聯連接。</li>
+      <li>「加一筆資料」是日常,「加一個欄位」是改結構,影響範圍完全不同。</li>
+      <li>「加個欄位」的真正工作量在影響評估:舊資料、報表、整合,一個都不能漏。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 1/4</span>
+    <h2>資料表中,橫向的一筆完整資料,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Column</button>
+    <button class="opt" data-val="B" type="button">B. Database</button>
+    <button class="opt" data-val="C" type="button">C. Row(Record)</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。橫向的一筆完整資料是 Row(列),也叫 Record(紀錄);直向定義資訊種類的才是 Column(欄位)。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:「在客戶表新增一個欄位」和「在客戶表新增一筆客戶資料」,對系統的影響程度差不多。</h2>
+    <button class="opt" data-val="A" type="button">是,都是加東西而已</button>
+    <button class="opt" data-val="B" type="button">否,加欄位是改結構,影響範圍大得多</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。新增紀錄是日常的資料異動;新增欄位是改變表的結構,會影響既有紀錄、報表與整合,兩者量級完全不同。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>客戶的訂單明細,通常應該存放在哪裡?</h2>
+    <button class="opt" data-val="A" type="button">A. 獨立的訂單資料表,再與客戶表建立關聯</button>
+    <button class="opt" data-val="B" type="button">B. 直接在客戶表上開「訂單1」「訂單2」等欄位</button>
+    <button class="opt" data-val="C" type="button">C. 存在客戶表的姓名欄位裡,用逗號分隔</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。一張表負責一種主題:訂單放訂單表,靠關聯連到客戶表。在客戶表上開固定數量的訂單欄位,很快就會不夠用。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶說「幫我加一個推薦人欄位,很簡單吧」。您的第一步應該是?</h2>
+    <button class="opt" data-val="A" type="button">A. 立刻答應,反正只是一個欄位</button>
+    <button class="opt" data-val="B" type="button">B. 先釐清欄位內容形式、舊資料處理方式,以及哪些報表和整合會受影響</button>
+    <button class="opt" data-val="C" type="button">C. 拒絕,因為改資料庫都很危險</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。加欄位的操作不難,難在影響評估。先釐清這三件事,才能給客戶準確的工時與風險說明。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,單元 4 的第一章讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">打開您手上專案的系統,挑一個您常看的畫面,試著猜猜:這個畫面背後,是哪幾張資料表?哪些是欄位、哪些是紀錄?</div>
+    <p>下一章我們會處理這一章埋下的問題:新欄位裡「什麼都沒填」的格子,系統是怎麼看待的——Null 和空字串,原來不是同一件事。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-2.html">前往下一章：4-2 Data Type、Null 與 Empty String →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-1';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

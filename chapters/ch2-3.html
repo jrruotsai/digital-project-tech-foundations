@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-3 HTTP Method｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 3 章｜HTTP Method — GET 和 POST 到底差在哪</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>HTTP Method<br>GET 和 POST 到底差在哪</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 2-2 再來。</p>
+    <p>上一章我們拆開了 Request 這封信,看到裡面有 Header、Body。這一章要看信封上另一個重要標記:這封信到底是「想看」還是「想改」。這就是 HTTP Method(方法)的角色。</p>
+    <ul>
+      <li>說出 GET 和 POST 最核心的差異。</li>
+      <li>認得 PUT、PATCH、DELETE 這幾個方法各自的用途。</li>
+      <li>看到工程師說「這是一個 POST 請求」時,知道大概在做什麼事。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「查資料跟改資料,系統對待的方式不一樣」</h2>
+    <p>Northstar Electronics 的客服系統偶爾會出現一個怪現象:客戶不小心重新整理頁面,結果同一筆客訴單被重複建立了兩次。工程師解釋:</p>
+    <div class="bubble">「這個表單送出用的是會重複執行的方法,重新整理等於再送一次,難怪會建兩筆。如果當初設計成用另一種方法,就不會有這個問題。」</div>
+    <p>這句話點出了一件事:HTTP 裡「查看資料」和「新增/修改資料」用的是不同的方法,而且這些方法本身的「脾氣」不一樣——有些重複做沒關係,有些重複做會出事。這一章就是要搞懂這些方法的脾氣。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>看菜單,還是下訂單</h2>
+    <p>回到餐廳的比喻。您走進餐廳做的事,大致分兩種:</p>
+    <p><strong>第一種,翻閱菜單看有什麼菜。</strong>您看幾次都沒關係,菜單不會因為您多翻幾次就變出新菜色,店裡的庫存也不會因此改變。這是 <strong>GET</strong>——用來「查看、讀取」資料的方法,理論上重複做,結果應該都一樣,不會改變任何東西。</p>
+    <p><strong>第二種,跟服務生下訂單。</strong>每喊一次「我要一份牛排」,廚房就真的多做一份牛排出來。喊兩次,就變成兩份。這是 <strong>POST</strong>——用來「新增」資料的方法,每執行一次,通常就會真的新增一筆東西。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      GET 像看菜單,查看不會留下痕跡;POST 像下訂單,每喊一次就真的多一份。這正是開頭客訴單被重複建立的原因——表單送出用的是「下訂單」的方式,重新整理等於又喊了一次。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>改地址,還是取消訂單</h2>
+    <p>除了看菜單和下訂單,還有另外兩種常見的事:</p>
+    <p><strong>改一筆已經存在的訂單資料,例如把送貨地址改掉。</strong>不管您把地址改成同一個值幾次,結果都是「訂單的地址變成這個值」,不會因為改第二次就變出第二筆訂單。這是 <strong>PUT</strong> 和 <strong>PATCH</strong>——用來「修改」已存在資料的方法(兩者細節上有差,PUT 通常是整筆換掉,PATCH 是只改某幾個欄位,但對顧問來說,先記得「都是修改」就夠用)。</p>
+    <p><strong>取消一筆訂單。</strong>取消過一次之後,這筆訂單就不存在了,再取消一次也不會有變化(因為它已經被取消了)。這是 <strong>DELETE</strong>——用來「刪除」資料的方法。</p>
+    <p>回到開頭的情境:客訴單表單原本該用「新增一次就該剛好一筆」的邏輯處理,但如果系統設計沒有防範「使用者重新整理頁面」這種情況,POST 被觸發兩次,就會真的產生兩筆客訴單。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>五個常見方法的正式說法</h2>
+    <table>
+      <tr><th style="width:16%;">方法</th><th>用途</th><th style="width:30%;">重複執行的結果</th></tr>
+      <tr><td><strong>GET</strong></td><td>查詢、讀取資料</td><td>不改變任何東西,重複查詢結果應該一樣</td></tr>
+      <tr><td><strong>POST</strong></td><td>新增一筆資料</td><td>每執行一次,通常就多一筆新資料</td></tr>
+      <tr><td><strong>PUT</strong></td><td>整筆更新已存在的資料</td><td>重複執行結果相同(都變成同一個最終狀態)</td></tr>
+      <tr><td><strong>PATCH</strong></td><td>只更新資料中的部分欄位</td><td>通常重複執行結果相同</td></tr>
+      <tr><td><strong>DELETE</strong></td><td>刪除已存在的資料</td><td>刪除後再刪一次,通常不會有變化</td></tr>
+    </table>
+    <p>「重複執行結果都一樣」這個特性,有個正式名稱叫 <strong>Idempotency(冪等性)</strong>,單元 6 會再深入教。這裡先記得:GET、PUT、PATCH、DELETE 通常具備這個特性,POST 通常不具備——這正是為什麼「表單重複送出」問題,幾乎都是發生在用 POST 新增資料的情境。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一筆客訴單的四種操作方式</h2>
+    <p>用客服系統的客訴單,走一遍四種方法各自對應的操作:</p>
+<pre>客服人員打開客訴單列表          → GET(查看所有客訴單)
+客戶送出一筆新的客訴             → POST(新增一筆客訴單)
+客服人員把處理狀態改成「已完成」  → PATCH(更新客訴單的某個欄位)
+主管發現這是一筆誤植的重複資料    → DELETE(刪除這筆客訴單)</pre>
+    <p>四個動作各自對應一種方法,背後的資料庫操作(1-1 教過的資料庫層)也不一樣:GET 只是讀取,不改變資料庫內容;POST、PATCH、DELETE 則會真的改變資料庫裡的紀錄。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:理解「重新整理頁面」為什麼有時候很危險</h3>
+    <p>如果一個操作背後是 POST(新增),使用者在等待回應時重新整理頁面,很可能會再送出一次,造成重複資料。理解這一點,您就能理解為什麼有些系統會在送出後把按鈕鎖住,或跳出「請勿重複點擊」的提示——這是在保護一個天生不具備「重複執行安全」特性的方法。</p>
+    <h3>場景二:跟工程師討論問題時更精準</h3>
+    <p>與其說「送出表單後資料重複了」,不如說「這個表單用的是 POST,使用者重新整理後好像又送了一次」。這種描述能幫助工程師快速鎖定,是不是該加上防止重複送出的機制。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>方法的選擇,反映了「這個動作的本質」</h2>
+    <h3>概念一:GET 不該拿來做「有副作用」的事</h3>
+    <p>正確的設計原則是:GET 只用來查看資料,不應該用來新增或修改任何東西。如果一個系統把「刪除」動作設計成用 GET 觸發,可能會出現使用者只是點了一個連結,資料就被意外刪除的風險。</p>
+    <h3>概念二:POST 是唯一「預設不具備重複安全」的常見方法</h3>
+    <p>這也是為什麼「防止表單重複送出」幾乎都是在處理 POST 的情境。設計良好的系統,通常會加上額外機制(例如送出後立刻鎖住按鈕),避免使用者操作失誤造成的重複新增。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>PUT、PATCH、DELETE 都是對「已存在」資料的動作</h2>
+    <h3>概念三:PUT/PATCH/DELETE 的前提是資料已經存在</h3>
+    <p>要修改或刪除一筆資料,前提是這筆資料本來就存在。如果嘗試修改一筆不存在的資料,系統通常會回傳錯誤(單元 2 下一章會教的 Status Code 就是用來表達這類結果)。</p>
+    <h3>概念四:方法只是「意圖的標記」,實際行為還是看系統怎麼實作</h3>
+    <p>HTTP Method 是一種約定俗成的標記慣例,幫助溝通雙方理解這次請求的意圖。但實際上系統背後真正怎麼處理,還是取決於工程師怎麼寫程式——方法本身只是溝通的慣例,不是強制的保證。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>PUT vs PATCH</td><td>PUT 通常是把整筆資料換成新的內容(即使只改一個欄位,也要把全部欄位都傳過去);PATCH 只需要傳要修改的那幾個欄位。對顧問來說,先記得兩者都是「修改」就足夠應付大多數溝通。</td></tr>
+      <tr><td>GET vs POST</td><td>GET 是查看,不會改變資料,可以放心重複執行;POST 是新增,重複執行通常會產生重複資料,是造成表單重複送出問題的主要原因。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的重複客訴單事件</h2>
+    <p>客服系統的客訴表單發生重複建立的問題,追查後發現:</p>
+<pre>使用者行為:客戶填完表單、按下送出,畫面等待反應時間較長
+使用者反應:以為沒有送出成功,又按了一次送出按鈕
+系統設計:送出按鈕沒有在第一次點擊後立即鎖住</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>客戶(Client 端操作者)、客服系統的前端與後端。</li>
+      <li><strong>資料如何移動?</strong>每次點擊送出按鈕,都各自觸發一次 POST 請求,新增一筆客訴單。</li>
+      <li><strong>各部分負責什麼?</strong>前端的送出按鈕理應在第一次點擊後立即停用,避免使用者重複觸發 POST。</li>
+      <li><strong>哪裡可能出錯?</strong>如果送出按鈕沒有做防止重複點擊的設計,使用者的每一次點擊,都是一次獨立、會真的新增資料的 POST 請求。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先確認送出按鈕在點擊後,有沒有立即被停用或顯示「處理中」的狀態,這是最常見也最容易被忽略的細節。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 API 串接裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:26%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>GET</td><td>查詢 Salesforce 的 Record(紀錄)清單</td></tr>
+      <tr><td>POST</td><td>透過 API 在 Salesforce 建立一筆新的 Record</td></tr>
+      <tr><td>PATCH</td><td>透過 API 更新 Salesforce 某筆 Record 的部分欄位</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「GET 和 POST 只是技術上的名稱差異,沒有實質不同」</h3>
+    <p>兩者的核心差異在於是否會改變資料。GET 應該是安全、可重複的查詢;POST 通常帶有實質的新增動作,重複執行的後果完全不同。</p>
+    <h3>誤解二:「所有的表單送出,都應該用 POST」</h3>
+    <p>如果表單的目的是查詢或篩選(例如搜尋表單),用 GET 反而更合理,因為查詢不該對資料造成任何改變。是否該用 POST,要看這個動作是不是真的在「新增」東西。</p>
+    <h3>誤解三:「重複點擊送出按鈕沒關係,系統會自動處理」</h3>
+    <p>是否會自動防止重複新增,取決於系統有沒有特別設計這個機制。不能預設所有系統都會妥善處理,這正是本章案例發生的原因。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「資料被重複建立」的檢查順序</h2>
+    <ol>
+      <li><strong>確認這個操作背後用的是哪個方法。</strong>通常是 POST 才會有重複新增的疑慮。</li>
+      <li><strong>確認使用者當下的操作情境。</strong>是否重新整理頁面、重複點擊按鈕、或連續送出。</li>
+      <li><strong>確認前端有沒有防止重複送出的機制。</strong>例如送出後立即停用按鈕。</li>
+      <li><strong>確認後端有沒有額外的防重複檢查。</strong>例如檢查短時間內是否已有相同內容的紀錄。</li>
+      <li><strong>把重複發生的時間與使用者操作情境提供給工程師。</strong>這比只說「資料重複了」有效率得多。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>GET 用來查看資料,理論上不會改變任何東西,可以放心重複執行。</li>
+      <li>POST 用來新增資料,重複執行通常會真的產生重複資料,這是表單重複送出問題的根源。</li>
+      <li>PUT、PATCH 用來修改已存在的資料,DELETE 用來刪除,三者重複執行通常結果相同。</li>
+      <li>方法的選擇反映了這個動作的本質,理解這一點能幫助您跟工程師更精準地討論問題。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>下列哪一個方法,重複執行通常會造成資料重複?</h2>
+    <button class="opt" data-val="A" type="button">A. GET</button>
+    <button class="opt" data-val="B" type="button">B. POST</button>
+    <button class="opt" data-val="C" type="button">C. DELETE</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。POST 用來新增資料,每執行一次通常就會真的多一筆,這是表單重複送出問題最常見的成因。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:GET 方法理論上不應該用來改變資料庫裡的內容。</h2>
+    <button class="opt" data-val="A" type="button">是,GET 應該只用來查詢,不該有副作用</button>
+    <button class="opt" data-val="B" type="button">否,GET 也可以拿來新增或刪除資料</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。GET 的設計原則是只用來查看資料,不該帶有新增或刪除等會改變資料的副作用。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>客服人員要把一筆客訴單的處理狀態改成「已完成」,這個動作對應哪一種方法?</h2>
+    <button class="opt" data-val="A" type="button">A. GET</button>
+    <button class="opt" data-val="B" type="button">B. POST</button>
+    <button class="opt" data-val="C" type="button">C. PATCH</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。修改一筆已存在資料的部分欄位(狀態),對應的是 PATCH(或 PUT)這類更新方法。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶回報「填完表單按送出,結果建立了兩筆一模一樣的資料」。第一個合理的懷疑方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 資料庫本身壞掉了</button>
+    <button class="opt" data-val="B" type="button">B. 送出按鈕可能沒有防止重複點擊或重複送出的機制</button>
+    <button class="opt" data-val="C" type="button">C. 客戶的網路速度太慢</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。表單送出通常是 POST,重複執行會產生重複資料,最常見的原因是送出按鈕沒有做好防止重複點擊的設計。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有哪個表單曾經發生過「重複送出」的問題?現在想想,那個操作背後用的應該是哪一種 HTTP Method?</div>
+    <p>下一章我們會教 Status Code——Server 回覆的那些數字暗號,像 200、404、500,各自代表什麼意思。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-4.html">前往下一章：2-4 Status Code →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-3';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

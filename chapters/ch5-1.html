@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-1 Source of Truth 與 System of Record｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 5 ・ 第 1 章｜Source of Truth 與 System of Record — 以誰為準</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎來到單元 5</span>
+    <h2>Source of Truth 與 System of Record<br>以誰為準</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-7、單元 4 再來。</p>
+    <p>1-7 埋過一個伏筆:「三個系統的客戶資料不一樣,以誰為準?」當時只給了初步答案。從這一章開始的整個單元 5,要正面處理真實企業裡最麻煩的問題:資料的品質與治理。第一課,就從「以誰為準」的完整規則講起。</p>
+    <ul>
+      <li>分辨 Source of Truth 和 System of Record 這兩個常被混用的詞。</li>
+      <li>理解「以誰為準」是按資料類別指定的,不是選一個系統當老大。</li>
+      <li>遇到資料衝突時,知道第一句該問什麼。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「三個系統,三支不同的電話」</h2>
+    <p>Northstar Electronics 的客服要聯絡一位客戶,發現:</p>
+    <div class="bubble">「CRM 上寫 0912-111-222,行銷平台寫 0933-444-555,ERP 又是另一支。到底哪支才是對的?我該打哪一支?」</div>
+    <p>這不是罕見的意外,而是多系統企業的日常。同一位客戶的資料散落在好幾個系統,各自在不同時間被更新,不一致遲早發生。真正的問題不是「哪支電話對」,而是:<strong>這家企業有沒有事先講好,電話這種資料,以哪個系統為準?</strong></p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>正本只有一份,其他都是影本</h2>
+    <p>想想戶籍謄本。您的戶籍資料,銀行有影本、學校有影本、公司人資也有一份,但大家都知道:<strong>正本在戶政事務所</strong>。影本之間打架時,沒有人會爭論,一律回頭查戶政事務所的正本。</p>
+    <p><strong>Source of Truth(事實來源)</strong>就是這個概念:針對某一類資料,被公認為「最可信的那一份」。其他地方的副本再多,查證時都回到這個來源。</p>
+    <p>而 <strong>System of Record(紀錄系統,1-7 介紹過)</strong>,是企業<strong>正式指定</strong>來扮演這個角色的系統——相當於白紙黑字公告「客戶聯絡資料,以 CRM 為正本」。兩個詞日常常混用,細微的差別是:Source of Truth 講的是「事實上該信誰」這個概念,System of Record 講的是「制度上指定了誰」這個決定。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      正本只有一份。企業要做的,是明確指定每一類資料的正本放在哪個系統,並讓所有人都知道。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>不是選一個系統當老大,而是分科指定</h2>
+    <p>常見的誤會是:「那我們指定 CRM 當正本,所有資料都以它為準。」實務上行不通——因為每個系統各有專業(1-7 教過的分工):</p>
+    <table>
+      <tr><th>資料類別</th><th>合理的 System of Record</th><th>為什麼</th></tr>
+      <tr><td>客戶聯絡資料、業務往來</td><td>CRM System</td><td>業務與客服天天在這裡維護客戶</td></tr>
+      <tr><td>訂單、發票、應收帳款</td><td>ERP</td><td>金流與帳務的法定紀錄在這裡</td></tr>
+      <tr><td>行銷偏好、訂閱狀態</td><td>Marketing Platform</td><td>訂閱與退訂都發生在這裡</td></tr>
+    </table>
+    <p>就像政府機關:戶籍找戶政、地籍找地政、稅籍找國稅局——沒有一個「萬能正本機關」。企業的資料治理也是<strong>按資料類別,一類一類指定</strong>。回到開頭的三支電話:如果企業已指定「聯絡資料以 CRM 為準」,客服就打 CRM 那支,同時回報其他兩個系統該同步更新了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:30%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Source of Truth<br>事實來源</strong></td><td>針對特定資料,被視為最可信、查證時最終依據的那一份資料來源</td></tr>
+      <tr><td><strong>System of Record<br>紀錄系統</strong></td><td>企業正式指定,作為某類資料權威版本的系統;資料衝突時以它為準</td></tr>
+    </table>
+    <p>補充一個關鍵原則:指定不只是「講好」,還要配套——正本系統要有人負責維護(下一章的 Data Owner/Steward)、副本系統要定期從正本同步(5-6 的同步方向),整套規則合起來才叫治理。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>有了規則之後,衝突的處理路徑</h2>
+    <p>再看一次三支電話的情境,這次企業已指定「聯絡資料的 System of Record 是 CRM」:</p>
+<pre>1. 客服發現三個系統的電話不一致
+2. 查規則:聯絡資料 → System of Record 是 CRM
+3. 以 CRM 的 0912-111-222 為準,聯絡客戶
+4. 通報資料管理者:行銷平台與 ERP 的電話已過時
+5. 由同步機制(或人工)把正本的值更新到兩個副本系統</pre>
+    <p>對比沒有規則的世界:客服要自己猜、打錯電話、三個部門互相指責資料是對方改壞的。規則本身不難,難的是「事先講好並寫下來」——而推動這件事,正是顧問能創造價值的地方。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:整合專案的第一個工作坊</h3>
+    <p>接到「把 CRM 和行銷平台的客戶資料打通」的需求,第一場討論該問的不是技術,而是:「每一類欄位,以哪邊為準?」姓名、電話、Email、訂閱狀態——一個欄位一個欄位確認。這張「以誰為準」的清單,是整合設計的地基,沒有它,後面的同步規則全是空中樓閣。</p>
+    <h3>場景二:資料衝突的仲裁</h3>
+    <p>客戶內部為了「報表該用哪個系統的數字」爭論不休時,您可以把問題轉成:「這類資料,貴公司指定的 System of Record 是哪個系統?」如果答案是「沒有指定過」,那麼真正該解決的問題就浮現了——而這比爭論單一數字有價值得多。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>指定,是治理的起手式</h2>
+    <h3>概念一:沒有指定正本,每個副本都自認是正本</h3>
+    <p>各部門都覺得「我天天用的系統才是準的」。不指定,衝突就沒有裁判,只能靠嗓門大小決定。指定 System of Record 的價值,不在技術,在於給了所有人同一套判斷依據。</p>
+    <h3>概念二:按資料類別指定,粒度甚至可以到欄位</h3>
+    <p>「客戶資料以 CRM 為準」還不夠精細——同一筆客戶,聯絡資料以 CRM 為準、訂閱狀態卻該以行銷平台為準(退訂發生在那裡)。成熟的治理會把「以誰為準」落到欄位層級,這正是 5-7 Field Ownership 的預告。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>正本要養,副本要追</h2>
+    <h3>概念三:被指定為正本的系統,要配得上這個身分</h3>
+    <p>指定 CRM 當聯絡資料的正本,就要確保:業務真的在 CRM 維護資料(而不是記在自己的試算表)、欄位有驗證規則把關(單元 1 教過的後端把關)。指定卻不維護,正本比副本還舊,規則就名存實亡。</p>
+    <h3>概念四:副本的更新方向,永遠從正本流出</h3>
+    <p>理想的資料流是單向的:正本更新 → 同步到各副本。如果副本也能改、還會回頭覆蓋正本,衝突就會沒完沒了(5-6 會教雙向同步的衝突處理)。看整合架構圖時,檢查「箭頭是不是從正本流出」,是很實用的健檢動作。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:34%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Source of Truth vs System of Record</td><td>前者是「事實上最可信的來源」這個概念;後者是「制度上正式指定的系統」。理想狀態下兩者是同一個;治理失能時,指定的系統(SoR)可能反而不是最可信的(SoT),那就是要修的問題。</td></tr>
+      <tr><td>「以誰為準」vs「哪筆比較新」</td><td>1-7 提過:更新時間新,不代表就是對的(可能是誤改)。以誰為準看的是「事先指定的規則」,不是事後比時間戳。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的「以誰為準」清單</h2>
+    <p>顧問協助 Northstar 做資料治理的第一步,產出了這張清單:</p>
+<pre>資料類別          System of Record   副本系統
+客戶基本與聯絡資料  CRM System         Marketing Platform、ERP
+訂單與帳務         ERP                CRM(唯讀顯示)
+行銷訂閱狀態       Marketing Platform  CRM(唯讀顯示)
+產品主檔          ERP                官網、CRM</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>四類資料、三個主要系統、以及使用這些資料的所有部門。</li>
+      <li><strong>資料如何移動?</strong>各類資料從自己的正本系統,單向同步到副本系統。</li>
+      <li><strong>各系統負責什麼?</strong>每個系統都是某些資料的正本、同時是其他資料的副本——沒有萬能老大。</li>
+      <li><strong>哪裡可能出錯?</strong>如果客服在 CRM 上直接改「訂閱狀態」(它在 CRM 只是唯讀副本),改了也會被下次同步蓋回去,造成「我明明改了又變回來」的鬼打牆。</li>
+      <li><strong>第一個合理的檢查方向?</strong>遇到「資料一直被改回去」的回報,先查:這個欄位的正本在哪個系統?使用者是不是改到了副本?</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>System of Record</td><td>企業常指定 Salesforce 為客戶關係資料的 SoR、ERP(如 SAP)為財務資料的 SoR</td></tr>
+      <tr><td>正本→副本的單向同步</td><td>Salesforce 的訂單金額欄位設為唯讀,由 ERP 定期同步寫入</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「選最新、最貴的系統當正本就對了」</h3>
+    <p>正本要選「這類資料實際被維護的地方」。業務天天用 CRM 更新客戶,它就是聯絡資料的合理正本——跟系統新舊、價格無關。</p>
+    <h3>誤解二:「指定一個系統當所有資料的正本,最單純」</h3>
+    <p>各系統各有專業,訂單的正本硬指定給 CRM,只會讓帳務對不起來。按資料類別分科指定,才是可運作的做法。</p>
+    <h3>誤解三:「規則大家心裡有數就好,不用白紙黑字」</h3>
+    <p>沒寫下來的規則,人員一異動就消失。那張「以誰為準」清單,是資料治理最便宜也最重要的文件。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「多系統資料不一致」的檢查順序</h2>
+    <ol>
+      <li><strong>確認這類資料有沒有指定 System of Record。</strong>有,以它為準;沒有,這就是根本問題。</li>
+      <li><strong>查正本系統目前的值。</strong>並確認這個值本身是否正確(正本也可能過時)。</li>
+      <li><strong>確認副本的同步機制是否正常。</strong>是同步壞了,還是根本沒建同步?</li>
+      <li><strong>檢查是否有人直接修改副本。</strong>「改了又被改回去」通常就是這個原因。</li>
+      <li><strong>個案修正之外,把規則缺口記下來。</strong>沒有清單就推動建立清單——這是治本。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>正本只有一份:每類資料都該指定一個 System of Record,衝突時以它為準。</li>
+      <li>指定是按「資料類別」分科進行的,不是選一個系統當萬能老大。</li>
+      <li>正本要有人維護、副本要從正本單向同步;改副本只會被蓋回去。</li>
+      <li>「以誰為準」的清單要白紙黑字;沒有這張清單,就先推動做出它。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>企業正式指定、作為某類資料權威版本的系統,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Data Warehouse</button>
+    <button class="opt" data-val="B" type="button">B. System of Record</button>
+    <button class="opt" data-val="C" type="button">C. Primary Key</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。System of Record 是制度上指定的權威系統,資料衝突時以它為準。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:資料治理的正確做法,是指定一個系統作為「所有資料」的正本。</h2>
+    <button class="opt" data-val="A" type="button">是,一個老大最單純</button>
+    <button class="opt" data-val="B" type="button">否,應按資料類別分別指定,各系統各管專業</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。聯絡資料的正本合理在 CRM、訂單帳務在 ERP、訂閱狀態在行銷平台——按類別分科指定,才符合各系統的實際分工。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>使用者抱怨「我在 CRM 改了訂閱狀態,隔天又變回去了」。已知訂閱狀態的正本是行銷平台,最可能的原因是?</h2>
+    <button class="opt" data-val="A" type="button">A. CRM 系統有 Bug</button>
+    <button class="opt" data-val="B" type="button">B. 使用者記錯了,根本沒改過</button>
+    <button class="opt" data-val="C" type="button">C. 使用者改到的是副本,下一次同步把正本的值蓋了回來</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。副本的值來自正本的同步;直接改副本,下次同步就會被正本蓋回去。要改,得去正本系統改。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:三個系統的客戶電話都不一樣,客戶內部吵成一團。顧問的第一個問題應該是?</h2>
+    <button class="opt" data-val="A" type="button">A. 「聯絡資料這一類,貴公司指定的 System of Record 是哪個系統?」</button>
+    <button class="opt" data-val="B" type="button">B. 「哪一筆的更新時間最新?就用那筆」</button>
+    <button class="opt" data-val="C" type="button">C. 「三支都打打看,通了就是對的」</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。衝突的裁判是事先指定的規則,不是時間戳。如果答案是「沒指定過」,那就找到了真正該解決的問題。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,單元 5 的第一章讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上專案的客戶,有沒有一張白紙黑字的「以誰為準」清單?如果沒有,哪一類資料的衝突最常發生?</div>
+    <p>指定了正本系統之後,下一個問題是:誰來「養」這些資料?下一章介紹 Master Data,以及照顧它的兩種角色。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch5-2.html">前往下一章：5-2 Master Data 與資料責任 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '5-1';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

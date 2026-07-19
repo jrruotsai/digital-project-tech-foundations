@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-1 網站網址與 DNS｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 1 章｜網站網址與 DNS — 網址是怎麼變成伺服器的</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎來到單元 2</span>
+    <h2>網站網址與 DNS<br>網址是怎麼變成伺服器的</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完單元 1,特別是 1-2 的 Client/Server 觀念。</p>
+    <p>單元 1 我們學了「Client 發問、Server 回答」。這一章要補上中間缺的一塊:您在網址列打的那串字,到底是怎麼找到正確的 Server 的?讀完這一章,您應該可以:</p>
+    <ul>
+      <li>拆解一個網址的組成部分。</li>
+      <li>用自己的話說明 IP、Domain、DNS 三者的關係。</li>
+      <li>聽到「網站打不開」時,知道這可能跟「找不到地方」有關,而不只是「Server 壞了」。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「我們才剛換新網域,結果客戶說打不開」</h2>
+    <p>Northstar Electronics 上週把官網從舊網址搬到新網域,IT 同仁收到反映:</p>
+    <div class="bubble">「有些客戶說新網址打不開,但我們同事這邊都正常,是不是伺服器有問題?」</div>
+    <p>這個情境很典型:換網域之後,網址要花一點時間才會被全世界「認得」。這跟 Server 本身好不好一點關係都沒有,而是跟這一章要教的 DNS 有關。搞懂這個機制,您就能理解為什麼工程師常說「再等等,DNS 還在生效中」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>門牌地址,還是背後真正的座標</h2>
+    <p>想像您要寄信給一位朋友,信封上寫的是「幸福路 100 號」,郵差看得懂這個地址,就能把信送到。但郵差心裡真正認的,其實是這棟房子在地圖上精確的座標位置,「幸福路 100 號」只是給人類方便記憶的門牌。</p>
+    <p><strong>Domain(網域名稱)</strong>就像那個門牌地址,例如 northstar-electronics.com,是給人類方便記憶、輸入的名字。</p>
+    <p><strong>IP 位址</strong>則是電腦世界裡真正的座標,像 203.0.113.25 這樣一串數字。Server 真正的身分,靠的是這串數字,不是好記的名字。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Domain 是給人看的門牌,IP 是機器認得的座標。兩者指向同一個地方,只是給不同「讀者」使用。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>那 DNS,就是查地址的電話簿</h2>
+    <p>問題來了:如果 Server 只認 IP,那使用者打的 Domain 要怎麼變成 IP?這裡需要一位「翻譯員」。</p>
+    <p><strong>DNS(Domain Name System,網域名稱系統)</strong>就是這個翻譯員,它像一本全世界共用的電話簿:您輸入姓名(Domain),它幫您查出對應的電話號碼(IP),然後您的 Browser 才會拿著這個 IP,去敲 Server 的門。</p>
+    <p>回到開頭的情境:Northstar 換了新網域,等於在電話簿裡登記了一筆新資料。這本「電話簿」分散在全世界很多台電腦上,更新需要時間慢慢傳播出去,這段等待期,就是工程師說的「DNS 生效中」。有些人的電腦已經查到新資料,有些人的電腦還拿著舊資料,才會出現「同事這邊正常、客戶那邊打不開」的落差。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>拆解一個完整的網址</h2>
+    <p>先看正式定義,再拆解網址的每一段:</p>
+    <table>
+      <tr><th style="width:22%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>IP 位址</strong></td><td>電腦在網路上的數字位址,是機器真正用來定位彼此的座標</td></tr>
+      <tr><td><strong>Domain<br>網域名稱</strong></td><td>給人類方便記憶、輸入的網址名稱,對應到某個 IP 位址</td></tr>
+      <tr><td><strong>DNS</strong></td><td>把 Domain 翻譯成對應 IP 位址的系統</td></tr>
+      <tr><td><strong>URL</strong></td><td>完整的網址,包含通訊協定、Domain、路徑等資訊</td></tr>
+    </table>
+    <p>用一個實際的網址拆解:<code>https://www.northstar-electronics.com/products</code></p>
+    <ul>
+      <li><code>https://</code> — 通訊協定(單元 2 的下一章會深入教 HTTP/HTTPS)</li>
+      <li><code>www.northstar-electronics.com</code> — Domain,DNS 要查的就是這一段</li>
+      <li><code>/products</code> — 路徑,告訴 Server 您想看網站裡的哪個頁面</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>從打網址到看見畫面的完整旅程</h2>
+    <p>回顧 1-2 教過的一問一答,現在補上 DNS 這一段:</p>
+<pre>1. 您在 Browser 輸入 www.northstar-electronics.com
+2. Browser 問 DNS:「這個 Domain 對應的 IP 是什麼?」
+3. DNS 回答:「是 203.0.113.25」
+4. Browser 拿著這個 IP,向真正的 Server 發出 Request
+5. Server 回傳 Response,Browser 把內容畫成畫面</pre>
+    <p>第 2、3 步是這一章新補上的環節,發生在第 4 步(1-2 教過的 Client 向 Server 發請求)之前。少了這一段翻譯,Browser 根本不知道該敲哪扇門。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:判斷「網站打不開」是哪一種情況</h3>
+    <p>換網域或搬遷主機後,客戶反映「打不開」,先確認是不是 DNS 生效還沒傳播完成,而不是急著往 Server 本身找問題。這種情況通常過一段時間(數小時到一兩天)會自行恢復,不需要工程師緊急介入。</p>
+    <h3>場景二:向客戶解釋為什麼換網域需要「觀察期」</h3>
+    <p>了解 DNS 的運作,您就能提前告訴客戶:「網域切換後,可能有一小段時間內,不同地區的使用者看到的網站會不一樣,這是正常現象,不是系統故障。」提早說明,能避免上線後不必要的緊張回報。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>Domain 和 IP,是兩種不同的「認得」</h2>
+    <h3>概念一:Domain 方便人類,IP 才是機器的真身分</h3>
+    <p>人類記名字比記數字容易,所以有了 Domain 這層方便的介面。但別忘了,Server 真正的身分認證,底層還是靠 IP 位址在運作。</p>
+    <h3>概念二:一個 Domain 可以對應到不同的 IP</h3>
+    <p>企業可能因為維護、切換機房等原因,把同一個 Domain 指向新的 IP。這時候 DNS 裡的紀錄要更新,而更新傳播到全世界需要時間,這就是「DNS 生效中」這句話的由來。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>DNS 是分散式的電話簿,不是單一個檔案櫃</h2>
+    <h3>概念三:DNS 查詢結果會被暫存</h3>
+    <p>為了不用每次都查一輪電話簿,使用者的裝置和沿路的網路設備,會把查到的結果暫存一段時間。這也是為什麼即使 DNS 紀錄已經更新,有些人還是會看到舊的內容一段時間——他們的裝置還拿著暫存的舊答案。</p>
+    <h3>概念四:DNS 出問題,影響的是「找路」,不是「內容本身」</h3>
+    <p>如果 DNS 查詢失敗,Browser 根本連 Server 的門都敲不到,連 Request 都發不出去。這跟 Server 本身處理請求時發生錯誤,是完全不同層級的問題,排查方向也不一樣。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Domain vs URL</td><td>Domain 只是網址中的「名稱」那一段;URL 是包含通訊協定、Domain、路徑在內的完整網址。Domain 是 URL 的其中一部分。</td></tr>
+      <tr><td>「網站打不開」的兩種可能</td><td>一種是 DNS 查不到對應的 IP(連門都找不到);另一種是 IP 找到了,但 Server 本身沒有正常回應(門找到了,但沒人應門)。兩種情況的排查方向完全不同。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的網域切換</h2>
+    <p>Northstar 把官網從舊網域 old-northstar.com 切換到新網域 northstar-electronics.com:</p>
+<pre>切換當天:IT 團隊在 DNS 系統裡,把新網域指向正式環境的伺服器 IP
+接下來 24 小時:世界各地的使用者,陸續開始看到新網址正常運作
+少數使用者:因為自己裝置暫存了舊的 DNS 查詢結果,還要多等一些時間才會更新</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>IT 團隊、DNS 系統、世界各地的使用者裝置。</li>
+      <li><strong>資料如何移動?</strong>DNS 紀錄的更新,需要時間傳播到全世界的 DNS 伺服器與使用者裝置的暫存。</li>
+      <li><strong>各角色負責什麼?</strong>IT 團隊負責在 DNS 系統裡設定正確的對應;傳播與暫存則是 DNS 機制本身的運作方式,不是人為可以立刻控制的。</li>
+      <li><strong>哪裡可能出錯?</strong>如果客戶反映「打不開」就急著檢查 Server,反而可能白忙一場,因為 Server 本身根本沒問題,問題卡在 DNS 傳播還沒完成。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先確認距離切換的時間有多久,再確認是不是只有少數使用者受影響——這兩個線索能幫助判斷是不是單純的 DNS 傳播延遲。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>Domain 設定</td><td>企業在 Salesforce Experience Cloud 網站上設定自訂網域(Custom Domain)時,同樣需要透過 DNS 設定完成對應</td></tr>
+      <tr><td>DNS 生效等待期</td><td>換用新的行銷平台網域、串接新的子網域時,同樣需要留出 DNS 傳播的緩衝時間</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「網址打不開,一定是 Server 掛了」</h3>
+    <p>也可能是 DNS 還沒查到正確的 IP,Request 根本還沒送到 Server。先確認是不是最近才換過網域或伺服器位置。</p>
+    <h3>誤解二:「DNS 更新後,全世界立刻都會看到新內容」</h3>
+    <p>DNS 的更新需要時間傳播,加上各地裝置的暫存,不同使用者看到新內容的時間點可能相差數小時甚至更久。</p>
+    <h3>誤解三:「Domain 就是 Server 本身」</h3>
+    <p>Domain 只是一個好記的名字,指向某個 IP。同一個 Server 可以有好幾個 Domain 指向它,也可能因為搬遷,同一個 Domain 改指向不同的 Server。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「網站打不開」的初步檢查順序</h2>
+    <ol>
+      <li><strong>確認是否最近變更過網域或伺服器設定。</strong>如果有,先考慮 DNS 傳播延遲的可能性。</li>
+      <li><strong>確認影響範圍。</strong>只有部分使用者,還是所有人都打不開?部分使用者受影響,更像是 DNS 暫存的落差。</li>
+      <li><strong>換一個網路環境測試。</strong>換用手機網路或其他電腦,看看是否能正常開啟。</li>
+      <li><strong>確認距離變更已經過了多久時間。</strong>DNS 傳播通常需要數小時到一兩天。</li>
+      <li><strong>如果時間已經足夠久仍然打不開,再往 Server 本身的問題排查。</strong>這時候才需要請工程師確認伺服器狀態。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Domain 是給人類方便記憶的名字,IP 才是機器真正認得的座標。</li>
+      <li>DNS 是把 Domain 翻譯成 IP 的系統,像一本全世界共用的電話簿。</li>
+      <li>DNS 的更新需要時間傳播,加上裝置的暫存,不是切換後立刻全世界同步生效。</li>
+      <li>「網站打不開」有兩種完全不同的可能:找不到路(DNS),或找到了但沒人應門(Server)。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>把 Domain(網域名稱)翻譯成對應 IP 位址的系統,叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. URL</button>
+    <button class="opt" data-val="B" type="button">B. DNS</button>
+    <button class="opt" data-val="C" type="button">C. HTTPS</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。DNS 就是把 Domain 翻譯成對應 IP 位址的系統,像一本全世界共用的電話簿。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:網域切換後,全世界的使用者會立刻同時看到新的內容。</h2>
+    <button class="opt" data-val="A" type="button">否,DNS 傳播與裝置暫存都需要時間</button>
+    <button class="opt" data-val="B" type="button">是,切換後馬上全部生效</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。DNS 紀錄的更新需要時間傳播到全世界,加上使用者裝置本身可能暫存了舊的查詢結果,不同人看到新內容的時間點會有落差。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>下列哪一項才是機器真正用來定位 Server 的資訊?</h2>
+    <button class="opt" data-val="A" type="button">A. Domain 名稱</button>
+    <button class="opt" data-val="B" type="button">B. 網站的標題</button>
+    <button class="opt" data-val="C" type="button">C. IP 位址</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Domain 是給人類方便記憶的名字,機器真正用來定位彼此的,是背後對應的 IP 位址。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:企業剛換了新網域,少數客戶反映打不開,多數客戶正常。第一個合理的懷疑方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 那些客戶的裝置可能還暫存著舊的 DNS 查詢結果</button>
+    <button class="opt" data-val="B" type="button">B. Server 一定壞了</button>
+    <button class="opt" data-val="C" type="button">C. 網站的程式碼有問題</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。多數人正常、少數人異常,而且剛換過網域,最可能的原因是 DNS 傳播延遲或裝置暫存了舊紀錄,不是 Server 本身故障。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,單元 2 的第一章讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有遇過換網域或搬遷主機後,不同使用者看到不一樣內容的情況?當時是怎麼解釋給客戶聽的?</div>
+    <p>下一章我們會正式進入 HTTP 的世界:Request 和 Response 究竟長什麼樣子,裡面裝了什麼。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-2.html">前往下一章：2-2 HTTP Request 與 Response →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-1';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

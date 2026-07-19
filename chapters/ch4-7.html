@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-7 JOIN 的基本概念｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 7 章｜JOIN 的基本概念 — 把兩張表接起來</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>JOIN 的基本概念<br>把兩張表接起來</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-4、4-6 再來。</p>
+    <p>4-4 說過,畫面上「訂單+客戶名稱」是兩張表的合體;4-6 學會了讀單張表的查詢。這一章把兩件事接起來:查詢裡把兩張表「接」在一起的動作,就是 JOIN。它也是報表數字暴增或缺漏時,最常見的嫌疑犯。</p>
+    <ul>
+      <li>看懂一段簡單的 JOIN 查詢在做什麼。</li>
+      <li>理解 JOIN 條件寫錯時,資料會「變多」或「變少」的原因。</li>
+      <li>分辨「內接」與「外接」造成的結果差異。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「報表的訂單筆數,怎麼比實際多了三倍?」</h2>
+    <p>Northstar Electronics 的營運同仁看著一份新報表,一臉困惑:</p>
+    <div class="bubble">「系統裡的訂單明明只有 5,000 筆,這張報表卻列出了 15,000 筆,而且很多筆看起來一模一樣。報表是不是壞了?」</div>
+    <p>資料沒有壞,訂單也沒有變多。這是 JOIN 條件寫錯時的經典症狀:兩張表接錯了,每筆訂單被重複配對了好幾次。讀完這一章,您看到「筆數暴增」就會立刻想到它。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>兩份名單,靠「共同的編號」拼起來</h2>
+    <p>想像您手上有兩份紙本名單:一份是客戶名冊(編號、姓名),一份是訂單清單(訂單號、金額、客戶編號)。主管要一份「訂單+客戶姓名」的整合清單,您會怎麼做?</p>
+    <p>很自然地:拿起一筆訂單,看它的客戶編號,翻客戶名冊找到同編號的那個人,把姓名抄過來。一筆一筆做完,整合清單就完成了。</p>
+    <p><strong>JOIN(接合)</strong>就是資料庫版的這個動作:把兩張表,依照「某個共同的欄位值相等」的條件,一筆一筆配對起來。那個共同欄位,正是 4-4 教過的 FK 與 PK:</p>
+<pre>SELECT 訂單編號, 金額, 姓名
+FROM   Orders
+JOIN   Customers ON Orders.客戶編號 = Customers.客戶編號
+       ↑ ON 後面就是「配對條件」:兩邊的客戶編號要相等</pre>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      JOIN 的靈魂在 ON 後面的配對條件。條件對,兩張表嚴絲合縫;條件錯,結果就會多得離譜或少得奇怪。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>配對不到的那些,要不要留?</h2>
+    <p>拼名單時您會遇到一個選擇題:某筆訂單的客戶編號,在客戶名冊裡找不到(4-4 教過的孤兒資料)——這筆訂單,要放進整合清單嗎?</p>
+    <p><strong>選擇一:配不到就丟掉。</strong>整合清單只留「兩邊都有」的資料。這叫 <strong>INNER JOIN(內接)</strong>,是預設、最常見的接法。</p>
+    <p><strong>選擇二:配不到也保留,姓名欄留空。</strong>以訂單為主,每筆訂單都出現,配不到客戶的就空著。這叫 <strong>LEFT JOIN(左外接)</strong>——「左邊那張表(訂單)全保留」。</p>
+    <p>兩種接法,筆數會不一樣:INNER JOIN 會「默默丟掉」孤兒訂單,LEFT JOIN 會全部保留。報表數字比預期<strong>少</strong>的時候,常常就是 INNER JOIN 把配不到的資料悄悄濾掉了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩種接法的正式說法</h2>
+    <table>
+      <tr><th style="width:24%;">名詞</th><th>定義</th><th style="width:30%;">對筆數的影響</th></tr>
+      <tr><td><strong>INNER JOIN<br>內接</strong></td><td>只保留兩張表都配對得到的紀錄</td><td>配不到的被排除,結果可能變少</td></tr>
+      <tr><td><strong>LEFT JOIN<br>左外接</strong></td><td>以左表為主全部保留,右表配不到的欄位顯示空值</td><td>左表筆數不減,配不到的欄位為空</td></tr>
+    </table>
+    <p>還有一個關鍵行為要知道:如果配對條件不夠精確,一筆左表資料配到右表的<strong>多筆</strong>,結果裡它就會<strong>重複出現多次</strong>。開頭「5,000 筆變 15,000 筆」的謎題,答案就在這裡——下一張卡片看實例。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>筆數暴增之謎:接錯欄位的後果</h2>
+    <p>那份異常報表,原本想做「訂單+業務姓名」。正確做法是用訂單上的「業務編號」去接業務表;但寫查詢的人誤用了「部門編號」當條件:</p>
+<pre>錯誤的接法:
+Orders JOIN Sales ON Orders.部門編號 = Sales.部門編號
+
+後果:一筆訂單的部門是「北區」,而北區有 3 位業務
+→ 這筆訂單和 3 位業務全部配對成功
+→ 同一筆訂單在結果裡出現 3 次
+→ 5,000 筆訂單 × 平均 3 位 = 15,000 筆</pre>
+    <p>這就是「筆數暴增」的機制:配對條件太寬鬆,一對多的配對讓資料被複製。反過來,「筆數變少」通常是 INNER JOIN 丟掉了配不到的資料。兩個症狀,同一個病灶:<strong>JOIN 條件</strong>。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:報表筆數不對,提問直接命中</h3>
+    <p>看到報表筆數暴增或缺漏,您可以直接問工程師兩句話:「這份報表 JOIN 了哪幾張表?配對條件是什麼欄位?」以及「用的是 INNER 還是 LEFT?」這兩問通常就把問題定位了大半,比「報表怪怪的」有效率十倍。</p>
+    <h3>場景二:提報表需求時,把「配不到的怎麼辦」說清楚</h3>
+    <p>要一份「所有客戶+最近訂單」的報表時,主動說明:「沒有訂單的客戶也要列出來,訂單欄位留空。」這句話就是在指定 LEFT JOIN。需求說到這個深度,工程師第一版就能做對,不用來回修改。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>JOIN 的正確性,建立在關聯設計上</h2>
+    <h3>概念一:正規的 JOIN,走 FK 對 PK 的路</h3>
+    <p>4-4 教過 FK 指向 PK——JOIN 的配對條件,正應該沿著這條路走(訂單的客戶編號 = 客戶的客戶編號)。用其他欄位亂接(如部門、姓名),就容易出現一對多的意外配對。關聯設計得好,JOIN 自然就穩。</p>
+    <h3>概念二:接錯欄位的症狀是「筆數不對」,不是「報錯」</h3>
+    <p>JOIN 條件寫錯,查詢通常照樣執行成功,只是結果悄悄地多了或少了。沒有錯誤訊息,反而更危險——所以驗收報表時,「筆數合理性」永遠值得先看一眼:總筆數跟來源表對得起來嗎?</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>INNER 還是 LEFT,是業務問題,不是技術問題</h2>
+    <h3>概念三:「配不到的要不要留」,答案在業務需求裡</h3>
+    <p>「沒下過單的客戶要不要出現在名單上?」——這個問題工程師無法替您回答,它取決於報表的用途:做客戶關懷名單,當然要(LEFT);做營收分析,可能不用(INNER)。顧問的價值,就是在需求階段把這一題問清楚。</p>
+    <h3>概念四:多層 JOIN 會放大所有問題</h3>
+    <p>實務的報表常常一次接三、四張表,每一層的條件與接法都可能引入偏差,而且會相乘放大。排查複雜報表時,有效的方法是「一層一層驗」:先確認兩張表接起來的筆數對,再加第三張。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>INNER JOIN vs LEFT JOIN</td><td>INNER 只留兩邊都配得到的;LEFT 以左表為主全保留,配不到的欄位空著。筆數變少想 INNER,欄位空白想 LEFT。</td></tr>
+      <tr><td>WHERE vs ON</td><td>ON 是「兩張表怎麼配對」的條件;WHERE 是配對完成後,再對結果做的篩選。兩者都會影響最終筆數,排查時要分開檢視。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的客戶關懷名單</h2>
+    <p>行銷團隊要一份「全部 VIP 客戶,以及他們最近一筆訂單日期」的名單,用來安排關懷拜訪:</p>
+<pre>第一版查詢(INNER JOIN):
+VIP 客戶共 1,200 位,名單卻只有 950 筆
+→ 250 位「從未下單」的 VIP,被 INNER JOIN 默默排除了
+
+修正版(LEFT JOIN):
+以客戶表為主全保留 → 1,200 筆,沒下過單的訂單日期欄空白
+→ 而這 250 位空白的,恰恰是最需要關懷的一群</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>行銷團隊、Customer Table、Order Table、寫查詢的工程師。</li>
+      <li><strong>資料如何移動?</strong>兩張表以客戶編號配對;接法決定了誰會出現在名單上。</li>
+      <li><strong>各部分負責什麼?</strong>接法(INNER/LEFT)決定「配不到的去留」,這是業務需求要指定的。</li>
+      <li><strong>哪裡可能出錯?</strong>需求沒說清楚「沒下過單的也要」,工程師用了預設的 INNER,名單就少了最關鍵的一群人。</li>
+      <li><strong>第一個合理的檢查方向?</strong>名單筆數(950)對不上母體(1,200)時,先問:「少掉的那群,是不是被 JOIN 配不到而排除了?」</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>JOIN</td><td>Salesforce 報表的「報表類型(Report Type)」,本質上就是預先定義好的表接合方式</td></tr>
+      <tr><td>INNER vs LEFT 的差異</td><td>報表類型中「有無相關紀錄」的設定(with / with or without related records)</td></tr>
+    </table>
+    <p>Salesforce 報表選錯 Report Type 導致「沒有相關紀錄的資料消失」,正是 INNER JOIN 效應的平台版。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「報表筆數暴增,一定是資料重複了」</h3>
+    <p>資料本身可能好好的,是 JOIN 條件太寬鬆讓結果被複製。先查接法,再懷疑資料。</p>
+    <h3>誤解二:「JOIN 寫錯會報錯,沒報錯就是對的」</h3>
+    <p>接錯欄位通常不會報錯,只會默默給出錯的筆數。驗收報表要主動核對筆數合理性。</p>
+    <h3>誤解三:「INNER 還是 LEFT 是技術細節,讓工程師決定就好」</h3>
+    <p>「配不到的要不要留」是業務問題。需求方不指定,工程師只能猜——猜錯的成本由整份報表的使用者承擔。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「報表筆數不對」的檢查順序</h2>
+    <ol>
+      <li><strong>先確認母體筆數。</strong>來源表實際有幾筆?跟報表差多少、是多還是少?</li>
+      <li><strong>問清楚 JOIN 了哪幾張表、配對條件是什麼欄位。</strong>是否沿著 FK 對 PK 的正路?</li>
+      <li><strong>筆數暴增:檢查是否接到了一對多的欄位。</strong>一筆被配對多次,就會重複出現。</li>
+      <li><strong>筆數變少:檢查是否 INNER JOIN 排除了配不到的紀錄。</strong>需要的話改用 LEFT。</li>
+      <li><strong>多層 JOIN 的報表,一層一層驗。</strong>先驗兩張表的接合筆數,再逐層加入。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>JOIN 把兩張表依配對條件接起來,正規的路是 FK 對 PK。</li>
+      <li>INNER JOIN 只留兩邊都配得到的;LEFT JOIN 以左表為主全保留,配不到的欄位空白。</li>
+      <li>筆數暴增,想「配對條件太寬,一對多複製了資料」;筆數變少,想「INNER 丟掉了配不到的」。</li>
+      <li>「配不到的要不要留」是業務問題,提報表需求時要主動指定,別留給工程師猜。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>JOIN 查詢中,「ON」後面寫的是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 要取出哪些欄位</button>
+    <button class="opt" data-val="B" type="button">B. 兩張表的配對條件</button>
+    <button class="opt" data-val="C" type="button">C. 排序方式</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。ON 指定兩張表怎麼配對(通常是 FK 等於 PK);要取的欄位在 SELECT,排序在 ORDER BY。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>「所有客戶都要出現在名單上,沒下過單的訂單欄位留空」——這個需求對應哪種接法?</h2>
+    <button class="opt" data-val="A" type="button">A. LEFT JOIN(以客戶表為主全保留)</button>
+    <button class="opt" data-val="B" type="button">B. INNER JOIN</button>
+    <button class="opt" data-val="C" type="button">C. 不用 JOIN,查一張表就好</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。「配不到也要保留、欄位留空」正是 LEFT JOIN 的行為;INNER 會把沒下過單的客戶整個排除。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>報表筆數比來源表多出好幾倍,而且很多列看起來重複。最可能的原因是?</h2>
+    <button class="opt" data-val="A" type="button">A. 資料庫自己複製了資料</button>
+    <button class="opt" data-val="B" type="button">B. 使用者重新整理太多次</button>
+    <button class="opt" data-val="C" type="button">C. JOIN 的配對條件太寬鬆,一筆資料被配對到多筆,結果被複製</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。配對條件接到一對多的欄位(例如用部門而不是業務編號),每筆資料就會重複出現多次,筆數自然暴增。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:VIP 客戶有 1,200 位,報表名單卻只有 950 筆。第一個合理的懷疑方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 有 250 位 VIP 的資料被刪掉了</button>
+    <button class="opt" data-val="B" type="button">B. INNER JOIN 把沒有訂單可配對的 VIP 排除了</button>
+    <button class="opt" data-val="C" type="button">C. 報表工具壞了</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。筆數比母體少,最常見的原因是 INNER JOIN 默默排除了配不到另一張表的紀錄;改用 LEFT JOIN 通常就能補回。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">回想您看過的某張跨資料報表(例如客戶+訂單),它遇到「配不到」的資料時,是排除了,還是留白?那個選擇符合報表的用途嗎?</div>
+    <p>下一章是單元 4 的最後一章:Index、View 與 Stored Procedure——三個工程師常掛嘴邊的資料庫名詞,一次認識。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-8.html">前往下一章：4-8 Index、View 與 Stored Procedure →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-7';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

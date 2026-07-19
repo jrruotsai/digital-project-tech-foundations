@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-11 Middleware 與 Message Queue — 系統之間的轉運站｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 6 ・ 第 11 章｜Middleware 與 Message Queue — 系統之間的轉運站</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active"><span class="tag">歡迎回來</span><h2>Middleware 與 Message Queue — 系統之間的轉運站</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</p><ul><li>看懂 Middleware 與 Message Queue 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">情境</span><h2>工作現場：Middleware 與 Message Queue — 系統之間的轉運站</h2><p>兩套系統要交換客戶與訂單資料，卻在格式、權限或流量上卡住。團隊知道問題和「Middleware」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。</p></section>
+
+  <section class="card"><span class="tag">情境例子 1/2</span><h2>先把「Middleware」當成一張交接單</h2><p>交接單會寫清楚誰交給誰、交付什麼、何時完成。少一欄，接手者就得猜。企業系統也是一樣：Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</p><div class="note"><span class="nt">先記住</span>名詞只是入口；真正要確認的是責任、資料、規則與可觀察結果。</div></section>
+
+  <section class="card"><span class="tag">情境例子 2/2</span><h2>規則要能處理例外</h2><p>順利的案例通常看不出設計好壞。資料空白、訊息重送、權限不足或服務延遲時，規則是否仍說得通，才是實務考驗。</p><p>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。</p><div class="note"><span class="nt">判斷方式</span>把正常路徑和一個失敗情境各走一次。</div></section>
+
+  <section class="card"><span class="tag">正式定義</span><h2>本章術語定義</h2><table><tr><th>術語</th><th>工作定義</th></tr><tr><td><strong>Middleware</strong></td><td>位於系統之間，負責路由、轉換與協調的軟體層</td></tr><tr><td><strong>Message Queue</strong></td><td>暫存訊息並讓生產者與消費者解耦的佇列</td></tr><tr><td><strong>Database Connection</strong></td><td>應用程式或中介層連到資料庫的連線設定與存取方式，需管理權限、逾時與連線資源。</td></tr><tr><td><strong>Evidence</strong></td><td>可用來核對本章結果的 Log、設定、資料、時間、版本或識別值。</td></tr></table><p>定義先回答「它是什麼」，後面的案例再回答「什麼時候用」。</p></section>
+
+  <section class="card"><span class="tag">串起來看</span><h2>把完整流程走一次</h2><pre>需求或事件發生
+→ 確認 Middleware 的定義與責任
+→ 依規則處理 Message Queue
+→ 記錄輸入、結果與識別值
+→ 檢查例外與失敗
+→ 由負責人確認後續動作</pre><p>每一箭頭都要能回答兩件事：誰負責，以及失敗後去哪裡查。</p></section>
+
+  <section class="card"><span class="tag">為什麼要學這個</span><h2>顧問會在哪裡用到</h2><h3>需求與設計會議</h3><p>整合顧問需要把「Middleware 與 Message Queue — 系統之間的轉運站」改寫成可確認的規則，放進API 規格與錯誤紀錄。</p><h3>異常排查</h3><p>出現問題時，先用本章概念縮小範圍，再請工程師或系統管理者查細節，溝通會快很多。</p></section>
+
+  <section class="card"><span class="tag">核心概念 1/2</span><h2>先確認責任與來源</h2><h3>概念一：誰負責決定</h3><p>技術上能修改，不等於有權決定。先找出資料、設定或流程的負責人。</p><h3>概念二：從哪裡取得證據</h3><p>Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。 要用實際設定、請求、回應或紀錄核對，不能只看畫面印象。</p></section>
+
+  <section class="card"><span class="tag">核心概念 2/2</span><h2>正常路徑之外，還有失敗路徑</h2><h3>概念三：先定成功標準</h3><p>如果不知道正確結果應該長什麼樣，就無法判斷目前是成功、延遲還是失敗。</p><h3>概念四：例外要留下線索</h3><p>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。 因此要留下時間、來源、識別值與處理結果。</p></section>
+
+  <section class="card"><span class="tag">容易混淆</span><h2>三個判斷不要混在一起</h2><table><tr><th>容易混淆</th><th>怎麼分</th></tr><tr><td>Middleware vs Message Queue</td><td>先看兩者在流程中負責的動作，不要只看名稱</td></tr><tr><td>技術成功 vs 業務正確</td><td>寫入成功不保證值、對象或權限符合規則</td></tr><tr><td>現象 vs 根因</td><td>畫面錯誤是現象，根因要靠跨層證據確認</td></tr></table></section>
+
+  <section class="card"><span class="tag">案例</span><h2>Northstar Electronics：Middleware 與 Message Queue — 系統之間的轉運站</h2><p>Northstar Electronics 在「CRM 呼叫訂單服務的 API」流程中遇到「Middleware 與 Message Queue — 系統之間的轉運站」相關問題。顧問先把概念放回資料流，再決定是否調整設定。</p><pre>Client → Endpoint → Request → Authentication → Response → Log
+→ 觀察結果與例外
+→ 記錄負責人與處理決定</pre><ol><li>先取得一筆正常與一筆異常樣本。</li><li>核對 Middleware、Message Queue 的定義與適用範圍。</li><li>讓  確認規則，並把結果寫回。</li></ol><div class="note"><span class="nt">第一個好問題</span>「哪一筆資料、哪一個時間點，能驗證目前的假設？」</div></section>
+
+  <section class="card"><span class="tag">延伸對照（選讀）</span><h2>在企業應用裡可能看到的樣子</h2><p>不熟悉特定產品的話，可以跳過。</p><table><tr><th>通用概念</th><th>常見落點</th></tr><tr><td>Middleware</td><td>設定頁、整合規格、權限政策或程式呼叫</td></tr><tr><td>Message Queue</td><td>資料欄位、狀態、Token、事件或執行紀錄</td></tr><tr><td>Evidence</td><td>Request ID、時間、版本、來源系統與 Log</td></tr></table></section>
+
+  <section class="card"><span class="tag">常見誤解</span><h2>三個常見的誤判</h2><h3>誤解一：「畫面沒報錯就是成功」</h3><p>背景處理仍可能失敗，要看實際結果與紀錄。</p><h3>誤解二：「最新的值一定正確」</h3><p>時間只能說明先後，不能取代責任與業務規則。</p><h3>誤解三：「重跑一次就會好」</h3><p>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。 重跑前先確認是否安全，並保留原始證據。</p></section>
+
+  <section class="card"><span class="tag">遇到問題先查什麼</span><h2>Middleware 發生異常時的排查順序</h2><ol><li>1. 確認 Endpoint、HTTP 方法與版本。</li><li>2. 查看 Request Header、Body 與 Parameter。</li><li>3. 核對 Authentication、Token 與權限。</li><li>4. 讀 Status Code、Response 與 Request ID。</li><li>5. 依 Rate Limit、Timeout 或 Retry 規則處理。</li></ol><p>每一步都記錄查到的證據與下一個判斷。不要同時修改多個設定，否則無法知道哪個改動有效。</p></section>
+
+  <section class="card"><span class="tag">重點整理</span><h2>帶走這四句話</h2><ol><li>Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</li><li>先確認責任與成功標準，再討論工具。</li><li>正常與失敗路徑都要能留下可追查的證據。</li><li>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。</li></ol></section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 1/4</span><h2>關於「Middleware 與 Message Queue — 系統之間的轉運站」，哪個說法正確？</h2><button class="opt" data-val="A" type="button">A. Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</button><button class="opt" data-val="B" type="button">B. 只要畫面沒有錯誤，就不需要查結果</button><button class="opt" data-val="C" type="button">C. 所有例外都可以直接重跑，不必確認</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</div></div></section>
+
+  <section class="card quiz-card" data-answer="B"><span class="tag">檢核 2/4</span><h2>Middleware 與 Message Queue 的差異，哪個說法最準確？</h2><button class="opt" data-val="A" type="button">A. 兩者只是不同叫法，可以互換</button><button class="opt" data-val="B" type="button">B. 位於系統之間，負責路由、轉換與協調的軟體層；暫存訊息並讓生產者與消費者解耦的佇列</button><button class="opt" data-val="C" type="button">C. 只要系統能運作，就不需要區分兩者</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>B</strong>。兩個術語在流程中的責任不同，先分清楚才能選對規則。</div></div></section>
+
+  <section class="card quiz-card" data-answer="C"><span class="tag">檢核 3/4</span><h2>Northstar 的「Middleware 與 Message Queue — 系統之間的轉運站」出現異常，第一個應取得哪組證據？</h2><button class="opt" data-val="A" type="button">A. 只看最後一次畫面截圖</button><button class="opt" data-val="B" type="button">B. 直接刪除失敗資料後重做</button><button class="opt" data-val="C" type="button">C. 確認 Endpoint、HTTP 方法與版本，再保留時間、來源與結果</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>C</strong>。先確認適用範圍與可追查證據，才能判斷問題落在哪一層。</div></div></section>
+
+  <section class="card quiz-card" data-answer="A"><span class="tag">檢核 4/4</span><h2>哪個做法最能降低「Middleware」相關的誤判？</h2><button class="opt" data-val="A" type="button">A. 查看 Request Header、Body 與 Parameter，並一次驗證一個假設</button><button class="opt" data-val="B" type="button">B. 同時修改所有環境與設定直到畫面恢復</button><button class="opt" data-val="C" type="button">C. 只採用最新看到的值，不保留原始紀錄</button><button class="checkbtn" type="button" disabled>檢核答案</button><div class="verdict"><div class="v-title"></div><div>正確答案是 <strong>A</strong>。依責任與證據逐步排查，比憑最新值或一次改很多項更可靠。</div></div></section>
+
+  <section class="card" id="finishCard"><span class="tag">本章完成</span><h2>辛苦了，本章讀完了</h2><p id="scoreText"></p><p>留一個小小的思考題：</p><div class="bubble">如果今天就要把「Middleware 與 Message Queue — 系統之間的轉運站」寫進專案規格，您會先補上哪一項責任或驗證資訊？</div><p>本單元到這裡完成。回到首頁可以進入下一個單元。</p><button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button><div><a class="backlink" href="../index.html">回課程首頁</a></div></section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '6-11';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

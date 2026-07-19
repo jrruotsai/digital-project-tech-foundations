@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1-2 Client、Server 與 Browser｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5;
+    --surface:#FFFFFF;
+    --surface-warm:#F5F4ED;
+    --ink:#3D3929;
+    --ink-soft:#6E6B64;
+    --ink-faint:#9A968C;
+    --accent:#C96442;
+    --accent-deep:#A84F31;
+    --accent-soft:#F9EDE5;
+    --accent-faint:#FCF6F1;
+    --line:#E5E3D9;
+    --ok:#5E8C61;
+    --ok-soft:#EDF3EC;
+    --no:#B54A3F;
+    --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{
+    background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{
+    display:none; width:100%; max-width:760px;
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);
+  }
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{
+    display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;
+  }
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{
+    background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px;
+    padding:14px 20px; margin:16px 0;
+  }
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{
+    background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;
+  }
+  pre{
+    background:#2D2B24; color:#EDEBE3; border-radius:12px;
+    padding:16px 22px; overflow-x:auto; font-size:14px; line-height:1.8;
+    font-family:Consolas,"Cascadia Code",Menlo,monospace;
+  }
+  .opt{
+    display:block; width:100%; text-align:left; margin:10px 0;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:12px;
+    padding:12px 18px; font-size:15.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; line-height:1.8; transition:border-color .15s, background .15s;
+  }
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{
+    margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;
+  }
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{
+    background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;
+  }
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;}
+    .card h2{font-size:21px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 1 ・ 第 2 章｜Client、Server 與 Browser</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <!-- 卡 1：開場 -->
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Client、Server 與 Browser<br>誰在發問，誰在回答</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-1 再來，我們會用到「三層」的觀念。</p>
+    <p>上一章我們把系統直的切成三層。這一章換個方向，橫著切：每一次系統互動，都有一邊在<strong>發問</strong>，另一邊在<strong>回答</strong>。</p>
+    <p>這個「一問一答」的模型，是之後理解 HTTP、API 的地基。讀完這一章，您應該可以：</p>
+    <ul>
+      <li>用自己的話說出 Client 和 Server 各是什麼角色。</li>
+      <li>說明 Browser（瀏覽器）為什麼是最常見的 Client。</li>
+      <li>遇到「打不開」「很慢」的回報時，知道第一個該問什麼。</li>
+    </ul>
+  </section>
+
+  <!-- 卡 2：情境 -->
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「只有我打不開，還是大家都打不開？」</h2>
+    <p>某天早上，客戶窗口在群組裡喊：</p>
+    <div class="bubble">「行銷平台打不開了！可以幫忙看看嗎？急！」</div>
+    <p>您回了一句話：</p>
+    <div class="bubble">「請問是只有您打不開，還是其他同事也打不開？」</div>
+    <p>兩分鐘後對方回覆：「咦，其他人都正常，只有我不行。」</p>
+    <p>就這麼一問一答，問題的範圍從「整個平台掛了」縮小到「這位同事自己的電腦或網路」。原本可能要驚動原廠的大事，變成請對方換個瀏覽器試試的小事。</p>
+    <p>為什麼這一問這麼有效？因為它在區分：問題出在<strong>發問的那一端</strong>，還是<strong>回答的那一端</strong>。這一章就是要把這個直覺，變成您隨時可以拿出來用的工具。</p>
+  </section>
+
+  <!-- 卡 3：白話（比喻） -->
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>打電話訂位的兩個角色</h2>
+    <p>想像您打電話跟餐廳訂位：</p>
+    <p><strong>您是打電話的人。</strong>您主動撥號、開口提出需求：「我想訂今晚七點、四位。」</p>
+    <p><strong>餐廳櫃檯是接電話的人。</strong>櫃檯不會主動打給您，它只是守在電話旁邊，有電話進來就接、就處理、就回覆：「好的，幫您訂好了。」</p>
+    <p>系統世界裡的分工一模一樣：</p>
+    <table>
+      <tr><th style="width:30%;">角色</th><th>做的事</th></tr>
+      <tr><td><strong>Client（客戶端）</strong></td><td>主動發出請求的一方。「請給我這個頁面」「請幫我存這筆資料」。</td></tr>
+      <tr><td><strong>Server（伺服器）</strong></td><td>守在那裡等請求的一方。收到請求、處理、回覆結果。</td></tr>
+    </table>
+    <p>發出去的那句話，術語叫 <strong>Request（請求）</strong>；回來的那句話，叫 <strong>Response（回應）</strong>。一次互動，就是一個 Request 加一個 Response。先記住這兩個詞，單元 2 會天天見到它們。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      沒有請求，就沒有回應。Server 不會主動把畫面塞給您，永遠是 Client 先開口。（企業整合裡有一種例外叫 Webhook，單元 7 會教，現在先不管它。）
+    </div>
+  </section>
+
+  <!-- 卡 4：白話（Browser） -->
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>那 Browser 是什麼？</h2>
+    <p><strong>Browser（瀏覽器）就是您電腦裡最常用的那個 Client。</strong>Chrome、Edge、Safari，都是。</p>
+    <p>您在網址列輸入公司官網、按下 Enter 的那一刻，Browser 做了三件事：</p>
+    <ol>
+      <li>替您發出 Request：「請給我這個網頁。」</li>
+      <li>接住 Server 回傳的 Response（網頁的內容）。</li>
+      <li>把內容「畫」成您看到的畫面。</li>
+    </ol>
+    <p>這裡剛好接上第 1 章：前端程式就是在 Browser 裡執行的。Browser 是舞台，前端是在台上演出的內容。</p>
+    <p>手機上的 <strong>Mobile App</strong> 呢？它也是 Client，只是不透過瀏覽器，自己直接向 Server 發 Request。您滑購物 App 看到的商品列表，就是 App 向 Server 要來的。</p>
+    <p>所以「用網頁」和「用 App」，在 Server 眼中差別沒有想像中大：都是某個 Client 發來的 Request，處理，回覆。變的是 Client 的形式，不變的是一問一答。</p>
+  </section>
+
+  <!-- 卡 5：正式定義 -->
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:26%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Client<br>客戶端</strong></td><td>在一次互動中，主動發出請求並等待回應的一方。例如瀏覽器、Mobile App，或是去呼叫別的系統的任何程式。</td></tr>
+      <tr><td><strong>Server<br>伺服器</strong></td><td>持續待命、接收請求、處理後回傳結果的一方。通常是遠端的電腦和跑在上面的服務。</td></tr>
+      <tr><td><strong>Browser<br>瀏覽器</strong></td><td>裝在使用者裝置上的 Client 軟體，負責發出網頁請求、接收內容、把內容呈現成畫面。</td></tr>
+    </table>
+    <p>有一件事想特別放大講：<strong>Client 和 Server 是「角色」，不是「身分」。</strong></p>
+    <p>就像一個人在公司是主管、回家是爸爸，同一個系統也會換角色。CRM 面對使用者的瀏覽器時，它是 Server；但當它去呼叫 ERP 要庫存資料時，它就變成了 Client。判斷方法只有一條：<strong>這次互動是誰先開口的，誰就是 Client。</strong></p>
+  </section>
+
+  <!-- 卡 6：三段路 -->
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一問一答，會經過三段路</h2>
+    <p>Client 發出的 Request，不是瞬間傳到 Server 的。它要走過三段路：</p>
+<pre>Client（您的瀏覽器）
+   ↓ 第一段：Client 端
+網路（公司網路、電信線路、VPN…）
+   ↓ 第二段：中間的路
+Server（系統的服務端）
+   ↓ 第三段：Server 端
+處理完，原路回傳 Response</pre>
+    <p>為什麼要知道這個？因為「打不開」「很慢」這類問題，壞的可能是三段中的任何一段：</p>
+    <ul>
+      <li><strong>Client 端出問題</strong>：這台電腦的瀏覽器怪怪的、暫存了舊東西。</li>
+      <li><strong>路上出問題</strong>：公司網路塞車、VPN 沒連上。</li>
+      <li><strong>Server 端出問題</strong>:系統真的掛了，這時所有人都會受影響。</li>
+    </ul>
+    <p>注意最後一句：<strong>Server 掛了，影響的是所有人。</strong>反過來說，如果只有一個人有問題，Server 多半是無辜的。這就是開頭那一問的原理。</p>
+  </section>
+
+  <!-- 卡 7：為什麼顧問需要知道 -->
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一：快速縮小問題範圍</h3>
+    <p>「只有一個人有問題」通常指向 Client 端：那個人的瀏覽器、電腦或網路。「所有人都有問題」通常指向 Server 端或中間的網路。</p>
+    <p>一句「其他人正常嗎？」，就決定了接下來往哪邊查、找誰處理。查 Client 端找客戶自己的 IT，查 Server 端找系統管理員或原廠。方向對了，速度就快了。</p>
+    <h3>場景二：聽懂需求的真正規模</h3>
+    <p>客戶說：「我們希望手機也能用。」這句話有兩種完全不同的做法：</p>
+    <ul>
+      <li>把網頁做成手機上也好看好用（同一個 Client：Browser）。</li>
+      <li>開發一個獨立的 Mobile App（多養一種全新的 Client）。</li>
+    </ul>
+    <p>第二種的成本高出許多：要開發、要上架、要持續維護。聽懂差別的顧問，才能在客戶輕輕一句「手機也能用」時，幫雙方把期待對齊。</p>
+  </section>
+
+  <!-- 卡 8：核心概念（上） -->
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>一問一答，角色會換</h2>
+    <h3>概念一：一次互動 = Request + Response</h3>
+    <p>您在系統裡做的每個動作，開頁面、按儲存、查報表，背後都是一次或多次的一問一答。這個模型簡單到不像重點，但單元 2 的 HTTP、單元 6 的 API，全部蓋在它上面。地基打好，後面都輕鬆。</p>
+    <h3>概念二：誰先開口，誰就是 Client</h3>
+    <p>再看一次這個例子，這次用 Northstar Electronics 的系統：</p>
+<pre>互動一：業務的瀏覽器 → 向 CRM 要客戶清單
+        瀏覽器是 Client，CRM 是 Server
+
+互動二：CRM → 向 ERP 要這位客戶的訂單金額
+        CRM 是 Client，ERP 是 Server</pre>
+    <p>同一個 CRM，在兩次互動裡扮演不同角色。之後看整合架構圖時，別問「這個系統是 Client 還是 Server」，要問「<strong>在這條線上</strong>，是誰先開口」。</p>
+  </section>
+
+  <!-- 卡 9：核心概念（下） -->
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>Browser 很方便，但它會「記舊帳」</h2>
+    <h3>概念三：Browser 是最普及的 Client</h3>
+    <p>不用安裝、輸入網址就能用，這是 Browser 最大的優點。企業系統大多做成網頁形式，原因就在這裡。</p>
+    <p>但 Browser 有個習性要認識：為了讓網頁開得快，它會把看過的內容暫存起來，下次直接拿舊的出來用。這個暫存叫 <strong>Cache（快取）</strong>。</p>
+    <p>Cache 帶來一種經典的假象：系統明明更新了，某位使用者的畫面卻還是舊的。這不是 Server 的錯，是那台電腦的 Browser 在拿舊庫存。所以「請重新整理頁面試試」不是敷衍，是有道理的第一步。單元 2 會教更完整的處理方式。</p>
+    <h3>概念四：排查問題，先想三段路</h3>
+    <p>Client 端、中間的網路、Server 端。遇到「連不上」先別急著深入任何一段，用影響範圍判斷方向：一個人有事查 Client，全部人有事查 Server 和網路。這個習慣和第 1 章的分層思考是同一家人，只是切的方向不同。</p>
+  </section>
+
+  <!-- 卡 10：容易混淆 -->
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>三組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:32%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Client vs 前端</td><td>很接近，但角度不同。「前端」講的是系統的分層（負責畫面的那層）；「Client」講的是互動中的角色（先開口的那方）。前端程式跑在 Client 裝置上，但一個完全沒有畫面的系統去呼叫別人時,它也是 Client。</td></tr>
+      <tr><td>Server vs 後端</td><td>「Server」是提供服務的那台電腦和角色；「後端」是跑在 Server 上的程式。日常對話混著用通常沒事，寫正式的問題描述時分清楚會更專業。</td></tr>
+      <tr><td>Browser vs Mobile App</td><td>兩個都是 Client。Browser 是通用軟體，開網址就能用；App 要安裝，直接和 Server 溝通，還能用到手機的推播、相機等功能。</td></tr>
+    </table>
+    <p>第一組最容易卡住。卡住的話記這句就好：<strong>前端是「層」，Client 是「角色」。</strong></p>
+  </section>
+
+  <!-- 卡 11：中立案例 -->
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的一次登入</h2>
+    <p>Northstar 的業務同仁早上打開瀏覽器，登入 CRM 查客戶資料。整個過程拆開來看：</p>
+<pre>1. 瀏覽器發出 Request：「請給我登入頁」
+2. CRM 回傳登入頁（Response）
+3. 業務輸入帳密、按登入（又一個 Request）
+4. CRM 驗證帳密，回傳客戶清單頁
+5. 瀏覽器把內容畫成畫面</pre>
+    <p>短短一次登入，就有兩組一問一答。瀏覽器全程是 Client，CRM 全程是 Server。</p>
+    <p>如果這位業務今天登入失敗，可能出錯的位置有：</p>
+    <ul>
+      <li>Client 端：這台電腦的瀏覽器有問題，或存了過期的登入狀態。</li>
+      <li>路上：公司網路或 VPN 斷了，Request 根本沒送到。</li>
+      <li>Server 端：CRM 服務異常，這時其他同事也會遇到。</li>
+    </ul>
+    <div class="note">
+      <span class="nt">第一個好問題</span>
+      還是那句：「其他人正常嗎？」只有一人異常，先查 Client 端；全部異常，先查 Server 端與網路。然後請對方截圖錯誤畫面、記下時間，這些是之後請工程師查紀錄的重要線索。
+    </div>
+  </section>
+
+  <!-- 卡 12：Salesforce 對照 -->
+  <section class="card">
+    <span class="tag">延伸對照（選讀）</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不用 Salesforce 的話，這張卡片可以直接翻過去。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>Salesforce 裡的樣子</th></tr>
+      <tr><td>Client</td><td>使用者的瀏覽器、Salesforce Mobile App、來呼叫平台 API 的外部系統</td></tr>
+      <tr><td>Server</td><td>Salesforce 平台本身的雲端服務（您看不到那台機器，但角色相同）</td></tr>
+      <tr><td>一問一答</td><td>每次開頁面、存紀錄，都是 Client 與平台之間的一組 Request / Response</td></tr>
+    </table>
+    <p>外部系統透過 API 呼叫 Salesforce 時，那個外部系統就是 Client。反過來，Salesforce 的 Outbound Message 或 Callout 去呼叫別人時，Salesforce 就是 Client。角色看方向，不看名字。</p>
+  </section>
+
+  <!-- 卡 13：常見誤解 -->
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一：「系統打不開，就是系統掛了」</h3>
+    <p>不一定。可能只是那位使用者的瀏覽器、電腦或網路有狀況。先確認影響範圍，別急著通報「系統故障」。喊過幾次狼來了，之後真的出事就沒人信了。</p>
+    <h3>誤解二：「Client 就是客戶的電腦」</h3>
+    <p>Client 是「先開口的角色」，跟機器是誰的、大台小台都無關。一台強大的伺服器去呼叫別的系統時，它就是那次互動的 Client。</p>
+    <h3>誤解三：「畫面顯示的一定是最新資料」</h3>
+    <p>Browser 可能給您看 Cache 裡的舊內容。看到「資料怎麼沒更新」時，先重新整理頁面，再判斷是不是真的有問題。</p>
+  </section>
+
+  <!-- 卡 14：先查什麼 -->
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「打不開、很慢」的檢查順序</h2>
+    <ol>
+      <li><strong>確認影響範圍。</strong>只有一個人，還是很多人？這一步決定後面所有方向。</li>
+      <li><strong>確認環境與時間。</strong>正式還是測試環境？從什麼時候開始的？昨天正常嗎？</li>
+      <li><strong>換一個 Client 試試。</strong>換瀏覽器、換裝置，或改用手機網路。換了就正常，代表問題在原本的 Client 端或它的網路。</li>
+      <li><strong>確認 Server 端狀態。</strong>請客戶 IT 或原廠確認服務是否正常、有沒有維護公告。</li>
+      <li><strong>保留證據。</strong>請使用者截圖錯誤畫面、記下發生時間。之後工程師查紀錄，全靠這些線索對時間。</li>
+    </ol>
+    <p>前三步都不需要技術工具，是顧問自己就能完成的。很多問題走到第三步就水落石出了。</p>
+  </section>
+
+  <!-- 卡 15：重點整理 -->
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Client 主動發出 Request，Server 等著接、處理、回 Response。一問一答是所有網路互動的基本形。</li>
+      <li>Client 和 Server 是角色不是身分。誰先開口，誰就是這次互動的 Client。</li>
+      <li>Browser 和 Mobile App 都是 Client，只是形式不同。Browser 會暫存舊內容，畫面舊不一定是資料舊。</li>
+      <li>遇到「連不上、很慢」，第一步永遠是確認影響範圍：一個人有事查 Client，大家都有事查 Server 和網路。</li>
+    </ol>
+    <p>接下來是四題檢核，慢慢作答就好。</p>
+  </section>
+
+  <!-- 卡 16：Q1 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>在一次系統互動中，判斷「誰是 Client」的依據是什麼？</h2>
+    <button class="opt" data-val="A" type="button">A. 誰的機器比較小台</button>
+    <button class="opt" data-val="B" type="button">B. 誰主動發出這次請求</button>
+    <button class="opt" data-val="C" type="button">C. 誰有畫面</button>
+    <button class="opt" data-val="D" type="button">D. 誰是客戶付錢買的系統</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。Client 與 Server 是互動中的角色：先開口發出 Request 的一方就是 Client，跟機器大小、有沒有畫面都無關。</div>
+    </div>
+  </section>
+
+  <!-- 卡 17：Q2 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題：CRM 系統永遠是 Server，不可能是 Client。</h2>
+    <button class="opt" data-val="A" type="button">是，CRM 是被使用的系統，當然是 Server</button>
+    <button class="opt" data-val="B" type="button">否，CRM 去呼叫別的系統時就是 Client</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。CRM 面對使用者的瀏覽器時是 Server，但它去呼叫 ERP 的 API 時，就是那次互動的 Client。角色依互動方向而定。</div>
+    </div>
+  </section>
+
+  <!-- 卡 18：Q3 -->
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>下列哪一個「不是」Client？</h2>
+    <button class="opt" data-val="A" type="button">A. 業務同仁電腦上的 Chrome</button>
+    <button class="opt" data-val="B" type="button">B. 公司官方的 Mobile App</button>
+    <button class="opt" data-val="C" type="button">C. 等著接收請求並回覆資料的 CRM 雲端服務</button>
+    <button class="opt" data-val="D" type="button">D. 一個定時去呼叫 ERP API 抓庫存的排程程式</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。守在那裡等請求、處理後回覆的，是 Server 的角色。其他三個都是主動發出請求的 Client，包括沒有畫面的排程程式。</div>
+    </div>
+  </section>
+
+  <!-- 卡 19：Q4 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>客戶回報「行銷平台打不開」。下列哪一個是資訊量最大的第一個問題？</h2>
+    <button class="opt" data-val="A" type="button">A. 「您的電腦是什麼牌子？」</button>
+    <button class="opt" data-val="B" type="button">B. 「是只有您打不開，還是其他同事也打不開？」</button>
+    <button class="opt" data-val="C" type="button">C. 「您上次改密碼是什麼時候？」</button>
+    <button class="opt" data-val="D" type="button">D. 「要不要重開機試試？」</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。影響範圍能立刻區分 Client 端問題（一個人）和 Server 端或網路問題（很多人），是成本最低、收斂最快的一問。</div>
+    </div>
+  </section>
+
+  <!-- 卡 20：完成 -->
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了，第二章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題，散步時想想就好：</p>
+    <div class="bubble">您手上的專案裡，找一條「系統 A 呼叫系統 B」的整合。在這條線上，誰是 Client、誰是 Server？如果它今天失敗了，您會先請哪一邊查什麼？</div>
+    <p>到這裡，您已經有了兩把刀：直切的「三層」，橫切的「一問一答」。之後的每一章，都會反覆用到它們。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch1-3.html">前往下一章：1-3 Website、Web App 與 Mobile App →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '1-2';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  // ===== 互動檢核 =====
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了，很棒！' : '沒關係，看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話，可以往回翻幾頁作答；直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果：' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好，可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次，特別是情境例子的部分。慢慢來，不急。'));
+    }
+  }
+
+  // ===== 標記完成 =====
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

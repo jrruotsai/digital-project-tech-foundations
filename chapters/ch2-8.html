@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-8 使用 Browser Network 觀察 Request｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 8 章｜使用 Browser Network 觀察 Request（實作）</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>使用 Browser Network<br>觀察 Request</h2>
+    <p class="lead">預估 30 分鐘 ・ 單元 2 的最後一章,建議先讀完 2-1 至 2-7。</p>
+    <p>前面七章教了很多名詞:Request、Response、Header、Status Code、Cookie、Cache……這一章要帶您親手打開瀏覽器內建的工具,實際「看見」這些東西長什麼樣子。看得到,才會真的有感覺。</p>
+    <ul>
+      <li>打開瀏覽器的開發者工具(Developer Tools),找到 Network(網路)頁籤。</li>
+      <li>找到一筆實際的 Request,看懂它的 Method 和 Status Code。</li>
+      <li>知道下次排查問題時,可以自己先看一眼 Network,再找工程師。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「工程師隨手打開一個面板,我完全跟不上」</h2>
+    <p>Northstar Electronics 的顧問曾經陪同工程師一起排查問題,對方隨手按了幾個鍵,螢幕上跳出一堆英文和數字:</p>
+    <div class="bubble">「你看,這裡回傳 404,網址打錯了啦。」工程師輕描淡寫地說,螢幕上那個面板讓顧問完全摸不著頭緒。</div>
+    <p>那個面板,就是這一章要教的 Network 工具。它其實不難,難的是第一次沒人帶著看。今天我們就一起打開它,看一次真實的 Request 長什麼樣子。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>裝了透明玻璃的信件分揀室</h2>
+    <p>還記得 2-2 教過,HTTP 溝通就像寄信一樣,有信封(Header)、信紙(Body)嗎?平常這些信件在 Browser 和 Server 之間往返,我們是看不到的,就像郵局的分揀室,一般人進不去。</p>
+    <p><strong>Developer Tools(開發者工具)</strong>裡的 <strong>Network(網路)</strong>頁籤,就像在這間分揀室裝了一面透明玻璃,讓您可以親眼看到每一封信:什麼時候寄出的、寄去哪裡、用哪一種方法(2-3 教過的 GET/POST)、對方回了什麼狀態碼(2-4 教過)。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Network 工具不會「改變」任何東西,它只是把原本就在發生的溝通,用看得到的方式呈現出來。打開它很安全,不用擔心會弄壞什麼。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>實際打開的步驟</h2>
+    <p>現在跟著做(用桌面版 Chrome 或 Edge 瀏覽器示範,其他瀏覽器操作方式類似):</p>
+    <ol>
+      <li>打開任何一個網站,例如公司官網。</li>
+      <li>按下鍵盤的 <strong>F12</strong>(或按右鍵選擇「檢查」),畫面右側或下方會跳出開發者工具面板。</li>
+      <li>在面板上方找到並點選 <strong>Network</strong> 頁籤。</li>
+      <li>按下瀏覽器的重新整理按鈕,面板裡會開始出現一筆一筆的紀錄,那就是這個網頁載入過程中,發生的每一次 Request。</li>
+    </ol>
+    <p>不用擔心操作出錯,這個面板只是「觀察」,不會影響網站的實際運作。您可以放心打開、關閉,多練習幾次就會熟悉。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>Network 面板裡常見的欄位</h2>
+    <table>
+      <tr><th style="width:24%;">欄位</th><th>對應到您學過的哪個概念</th></tr>
+      <tr><td><strong>Name</strong></td><td>這次 Request 的網址或檔案名稱(呼應 2-1 的 URL)</td></tr>
+      <tr><td><strong>Method</strong></td><td>這次 Request 使用的方法,例如 GET、POST(呼應 2-3)</td></tr>
+      <tr><td><strong>Status</strong></td><td>Server 回傳的狀態碼,例如 200、404(呼應 2-4)</td></tr>
+      <tr><td><strong>Headers</strong>(點進單筆紀錄後可見)</td><td>這次 Request 和 Response 的 Header 內容(呼應 2-2)</td></tr>
+      <tr><td><strong>Response</strong>(點進單筆紀錄後可見)</td><td>Server 實際回傳的 Body 內容(呼應 2-2)</td></tr>
+    </table>
+    <p>您不需要記住每個欄位的細節,只要知道「這幾個名詞我在前面章節都學過」,面板上的資訊就不再是天書,而是課本內容的具體呈現。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>把前七章的內容,對應到畫面上</h2>
+    <p>用一次實際的登入操作,示範整個對照過程:</p>
+<pre>1. 打開登入頁,Network 面板出現一筆 Name 是登入頁網址的紀錄
+   → Method 顯示 GET,Status 顯示 200(呼應 2-3、2-4)
+
+2. 輸入帳密按下登入,Network 面板新增一筆紀錄
+   → Method 顯示 POST(這次是送出資料,不是查看,呼應 2-3)
+   → 點進去看 Headers,能找到 Cookie 相關資訊(呼應 2-6)
+
+3. 登入成功,畫面跳轉,又出現新的 GET 紀錄
+   → 這次的 Request Headers 裡,能看到剛才拿到的 Cookie 被自動帶上(呼應 2-6)</pre>
+    <p>這樣走一遍,您會發現前面七章教的名詞,全部都能在這個面板上被實際指認出來,不再只是抽象的定義。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:回報問題前,先自己看一眼</h3>
+    <p>客戶說「表單送不出去」,您可以先打開 Network 面板,自己看一眼送出表單那筆 Request 的 Status Code,如果是 400 或 500,就能直接把這個資訊附在回報裡給工程師,省去一來一回確認的時間。</p>
+    <h3>場景二:陪同工程師排查時,聽得懂在看什麼</h3>
+    <p>下次工程師打開這個面板討論問題時,您不會再一頭霧水,而是能跟上對話,甚至主動指出「這筆 Status 是 404 耶」,展現您具備基礎的技術判斷能力。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>Network 面板是「觀察窗」,不是「操作介面」</h2>
+    <h3>概念一:面板呈現的是真實正在發生的溝通</h3>
+    <p>面板裡看到的每一筆紀錄,都是這個網頁實際發出去、收回來的真實 Request 和 Response,不是模擬或範例,這也是為什麼它對排查問題這麼有價值。</p>
+    <h3>概念二:面板只是觀察,不會影響網站的運作</h3>
+    <p>打開或關閉開發者工具,不會對網站本身的功能造成任何影響。這是一個安全、隨時可以練習的工具,不用擔心不小心弄壞什麼。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>看懂 Status 欄位,就能做初步判斷</h2>
+    <h3>概念三:紅色或標示異常的紀錄,通常代表出了問題</h3>
+    <p>多數瀏覽器會用顏色或特殊標示,凸顯狀態碼異常(如 4 開頭或 5 開頭)的紀錄,方便您一眼掃過去就能發現異常之處,不需要逐筆檢查。</p>
+    <h3>概念四:找不到某筆該有的 Request,本身也是重要線索</h3>
+    <p>有時候問題不是 Request 失敗,而是「這個 Request 根本沒有被送出去」。這種情況下,面板裡完全看不到相關紀錄,這件事本身就是很有用的線索,代表問題可能卡在更早的前端邏輯,連請求都還沒發出。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Console vs Network</td><td>開發者工具裡還有一個叫 Console 的頁籤,顯示的是程式執行時的訊息或錯誤;Network 顯示的是 Request 和 Response 的往來紀錄。兩者都有用,但關注的層面不同。</td></tr>
+      <tr><td>「看得到」vs「能改」</td><td>Network 面板讓您看得到溝通內容,但一般顧問不需要、也不建議在這裡直接修改任何設定或資料,它是觀察與診斷用的工具。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的表單送出異常</h2>
+    <p>客戶回報報名表單按下送出後沒有反應,顧問決定自己先打開 Network 面板看看:</p>
+<pre>操作:重新填寫表單,打開 Network 面板,再按一次送出
+觀察結果:面板裡完全沒有出現新的 POST 紀錄
+初步判斷:表單根本沒有把 Request 送出去,問題可能卡在前端(呼應 1-1 的三層架構)</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>顧問(操作 Network 面板的人)、表單的前端程式。</li>
+      <li><strong>資料如何移動?</strong>正常情況下,按下送出應該會觸發一筆新的 POST 紀錄出現。</li>
+      <li><strong>這次觀察負責什麼?</strong>確認問題是「請求根本沒發出」,還是「請求發出了,但 Server 回應異常」。</li>
+      <li><strong>哪裡可能出錯?</strong>如果連 Request 都沒有出現,通常代表前端的邏輯(可能是 3-7 會教的表單驗證)在送出前就攔住了,還沒機會呼叫後端。</li>
+      <li><strong>第一個合理的檢查方向?</strong>把「Network 面板裡完全沒有新紀錄」這個具體觀察告訴工程師,比只說「按了沒反應」精準得多,能幫助工程師直接往前端邏輯排查。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這個工具在企業應用排查裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>Network 面板排查</td><td>排查 Salesforce Experience Cloud 網站或行銷平台表單串接問題時,同樣是先看 Network 面板確認 Request 是否送出、Status Code 是什麼</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「打開開發者工具很危險,一般人不該碰」</h3>
+    <p>Network 頁籤純粹是觀察用途,不會對網站造成任何影響。放心打開來看,是每個顧問都該練習的基本技能。</p>
+    <h3>誤解二:「看不懂裡面所有欄位,就代表這個工具對我沒用」</h3>
+    <p>不需要看懂每一個細節,只要能找到 Method 和 Status 這兩個最關鍵的欄位,就已經能提供很有價值的資訊給工程師。</p>
+    <h3>誤解三:「面板裡沒有紅色標記,就代表一切正常」</h3>
+    <p>沒有錯誤標記,不代表流程完全正確——例如該出現的 Request 根本沒有出現,也是一種異常,只是它不會被標成醒目的紅色。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「操作沒反應」的檢查順序（實際動手）</h2>
+    <ol>
+      <li><strong>打開開發者工具的 Network 頁籤。</strong>按 F12 或右鍵選「檢查」。</li>
+      <li><strong>重新操作一次剛才有問題的步驟。</strong>觀察面板裡有沒有出現對應的新紀錄。</li>
+      <li><strong>如果完全沒有新紀錄出現,問題可能在前端。</strong>操作根本沒有被送出去。</li>
+      <li><strong>如果有紀錄,查看它的 Status 欄位。</strong>是 2 開頭、4 開頭,還是 5 開頭?</li>
+      <li><strong>把觀察到的具體現象(有沒有紀錄、Status 是什麼)提供給工程師。</strong>這比單純描述「沒反應」有價值得多。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Network 頁籤讓您親眼看見前面章節教過的 Request、Response、Method、Status Code。</li>
+      <li>它只是觀察工具,不會影響網站運作,可以放心打開來練習。</li>
+      <li>看到某筆該有的 Request 完全沒出現,本身就是重要的線索,代表問題可能卡在更早的前端邏輯。</li>
+      <li>提供具體的觀察(有沒有紀錄、Status 是什麼),遠比「沒反應」「怪怪的」這類描述更有幫助。</li>
+    </ol>
+    <p>恭喜您完成單元 2!您現在不只懂得網路和 Web 運作的原理,還親手打開過瀏覽器的工具,把抽象的概念變成看得到的畫面。下一單元,我們會進入 HTML、CSS、JavaScript 的世界,理解網頁本身是怎麼被組出來的。</p>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>要打開瀏覽器的開發者工具,常見的快捷鍵是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Ctrl + C</button>
+    <button class="opt" data-val="B" type="button">B. F12</button>
+    <button class="opt" data-val="C" type="button">C. Alt + Tab</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。按下 F12(或右鍵選擇「檢查」),就能打開開發者工具面板,裡面包含 Network 頁籤。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:打開並查看 Network 面板,不會影響網站本身的實際運作。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,打開就可能弄壞網站</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。Network 頁籤純粹是觀察工具,不會對網站的實際運作造成任何影響,可以放心打開來練習。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>在 Network 面板裡,想知道 Server 回傳的處理結果(例如 200 或 404),應該看哪一欄?</h2>
+    <button class="opt" data-val="A" type="button">A. Name</button>
+    <button class="opt" data-val="B" type="button">B. Method</button>
+    <button class="opt" data-val="C" type="button">C. Status</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Status 欄位顯示的正是 2-4 教過的狀態碼,能快速判斷這次 Request 處理得怎麼樣。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:重新操作一次有問題的表單送出動作,Network 面板裡完全沒有出現新的紀錄。這代表什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 這次操作根本沒有送出 Request,問題可能在前端邏輯</button>
+    <button class="opt" data-val="B" type="button">B. Server 一定當機了</button>
+    <button class="opt" data-val="C" type="button">C. 這是正常現象,不用理會</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。如果連 Request 都沒有出現在面板裡,代表這次操作根本沒有被送出去,問題很可能卡在前端,連呼叫 Server 的機會都還沒有。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本單元完成</span>
+    <h2>辛苦了,單元 2 全部讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">找一個您平常會用的網站,打開 Network 面板,重新整理頁面,試著找出一筆 Method 是 GET、Status 是 200 的紀錄。您找到了嗎?</div>
+    <p>接下來是單元 3:HTML、CSS、JavaScript 與表單。我們會打開一個網頁的原始碼,看看畫面到底是怎麼被組出來的。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-8';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

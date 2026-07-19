@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1-6 即時、批次、同步與非同步｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 1 ・ 第 6 章｜即時、批次、同步與非同步 — 資料什麼時候到</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>即時、批次、同步與非同步<br>資料什麼時候到</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-2 再來,會用到「一問一答」的觀念。</p>
+    <p>「這筆資料多久會同步過去?」是顧問工作中很常被問、也很常答錯的一句話。這一章要把「資料什麼時候到」拆成兩個各自獨立的問題來看,搞懂之後,您就能準確回答客戶的期待。</p>
+    <ul>
+      <li>分辨即時、近乎即時與批次處理的差異。</li>
+      <li>分辨同步與非同步處理的差異。</li>
+      <li>知道「多久會同步」這句話,其實藏著兩個不同的問題。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「客戶下單後,多久會出現在倉庫系統?」</h2>
+    <p>Northstar Electronics 的營運主管問了一句看似簡單的問題:</p>
+    <div class="bubble">「客戶在網站下單後,倉庫系統多久會看到這筆訂單?我們客服常被問這個。」</div>
+    <p>這個問題聽起來只有一個答案,其實背後牽涉兩件完全不同的事:第一,系統設計上訂單資料是「馬上送過去」還是「累積一批再送」;第二,送出去之後,下單的人要不要「等」系統確認送達才能做下一件事。這兩件事分開來看,答案才會準確。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>外送,還是等每天固定的貨車</h2>
+    <p>先看第一個問題:資料多久送一次。想像兩種收貨方式:</p>
+    <p><strong>方式一:叫外送,東西一買好馬上送到你手上。</strong>這是 <strong>即時處理(Real-time)</strong>——一有資料產生,幾乎立刻就處理、送出。</p>
+    <p><strong>方式二:等每天固定時間的貨車,把一整天的貨一次送達。</strong>這是 <strong>批次處理(Batch)</strong>——資料先累積起來,到了固定時間點,一次打包處理。</p>
+    <p>中間還有一種:<strong>近乎即時(Near real-time)</strong>,像是每五分鐘就出一趟車,不是立刻送,但也不用等到隔天,資料會在很短的延遲後被處理。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      即時、近乎即時、批次,回答的是「多久送一次」這個問題,跟「有沒有人在等」是兩回事。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>當面等結果,還是先去忙別的</h2>
+    <p>再看第二個問題:發出請求的人,要不要等結果。想像您去銀行辦事:</p>
+    <p><strong>方式一:您站在櫃檯前,行員處理完才離開。</strong>這是 <strong>同步(Synchronous)</strong>——發出請求的一方,原地等待,直到收到結果才繼續下一步。這正好呼應 1-2 教過的「一問一答」:您問完,站著等答案。</p>
+    <p><strong>方式二:您把資料交給行員,先去辦別的事,之後再回來拿結果或收到通知。</strong>這是 <strong>非同步(Asynchronous)</strong>——發出請求後不等待,先去做別的事,結果晚點再說。</p>
+    <p>現在把兩個問題合在一起看:「訂單資料即時送到倉庫系統」,講的是送出的頻率;至於「網站送出訂單時,使用者要不要等倉庫系統回應完才能看到『下單成功』畫面」,講的是同步或非同步。這兩題答案是分開決定的,不是同一件事。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>四個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:22%;">名詞</th><th>回答的問題</th><th>定義</th></tr>
+      <tr><td><strong>Real-time</strong></td><td>多久送一次?</td><td>資料一產生,幾乎立即被處理與傳送</td></tr>
+      <tr><td><strong>Near real-time</strong></td><td>多久送一次?</td><td>資料在很短的延遲後(通常數秒到數分鐘)被處理</td></tr>
+      <tr><td><strong>Batch</strong></td><td>多久送一次?</td><td>資料先累積,到固定時間點一次處理</td></tr>
+      <tr><td><strong>同步 / 非同步</strong></td><td>要不要等結果?</td><td>同步是原地等待結果才繼續;非同步是先繼續做別的事,結果晚點才處理</td></tr>
+    </table>
+    <p>這兩組概念可以自由組合。系統設計者要決定的,其實是兩個獨立的選擇題,不是單一光譜。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>同一筆訂單,不同的組合方式</h2>
+    <p>回到 Northstar 的訂單案例,列出幾種可能的組合:</p>
+<pre>組合一:即時 + 同步
+訂單一產生就送出,使用者畫面停在「處理中」,等倉庫系統確認完才顯示「成功」
+
+組合二:即時 + 非同步
+訂單一產生就送出,但使用者立刻看到「訂單已受理」,倉庫系統的確認結果晚點才更新狀態
+
+組合三:批次 + 非同步
+訂單先累積,每天凌晨一次送到倉庫系統,使用者下單當下完全不會等這個過程</pre>
+    <p>三種組合,使用者體驗完全不同。多數電商網站採用組合二:讓使用者不用等,但背景仍然盡快處理。這也是為什麼「下單成功」和「倉庫確實收到貨」這兩件事,有時候會有落差——不是系統壞了,是設計本來就是這樣分開處理。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:準確回答客戶的期待</h3>
+    <p>客戶問「多久會同步」,先確認他問的是哪一件事:是想知道系統多久跑一次批次,還是想知道使用者操作當下要不要等待。問對問題,才能給出真正有用的答案,而不是含糊地說「應該很快」。</p>
+    <h3>場景二:估工時和判斷可行性</h3>
+    <p>客戶要求「訂單一送出,倉庫馬上要看到」,這通常意味著要用即時處理,而不是原本設計的批次處理。這種改動往往牽涉架構調整,工時和複雜度都會提高不少,提早發現能避免後續認知落差。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>「多久送一次」是獨立的一個選擇</h2>
+    <h3>概念一:即時不代表沒有延遲,只是延遲很短</h3>
+    <p>即使叫做「即時」,資料傳送和處理仍然需要一點點時間,只是短到使用者幾乎感覺不到。不要把「即時」理解成「零延遲」,理解成「延遲短到可以忽略」比較準確。</p>
+    <h3>概念二:批次處理不是落後的做法,是刻意的選擇</h3>
+    <p>很多報表、對帳作業刻意設計成批次處理,因為不需要即時性,批次處理反而更省資源、更容易確保資料完整。選擇批次不代表系統過時,而是這個情境本來就不需要即時。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>「要不要等」是另一個獨立的選擇</h2>
+    <h3>概念三:非同步能讓使用者體驗更順暢</h3>
+    <p>如果每個動作都要同步等到底層系統全部處理完,使用者畫面會常常卡住轉圈圈。非同步設計讓使用者先看到「已受理」,背景再慢慢處理,體驗會順暢很多,但代價是使用者看到的狀態,不一定代表後端已經完全處理完畢。</p>
+    <h3>概念四:這兩組概念要分開想,不要混為一談</h3>
+    <p>「即時」常常被誤會成「同步」,但其實一個系統可以是「即時 + 非同步」:資料立刻被送出處理,但發送端完全不用等結果。回到開頭的問題,先分開想這兩件事,才不會被自己的直覺誤導。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>即時 vs 同步</td><td>即時回答的是「多久送一次」;同步回答的是「發送方要不要等結果」。兩者可以獨立組合,即時的系統也可能是非同步設計。</td></tr>
+      <tr><td>批次 vs 非同步</td><td>批次是「資料累積後一次處理」的時間安排;非同步是「不等結果就繼續做別的事」的等待方式。批次處理通常也是非同步的,但非同步不代表一定是批次。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的每日對帳</h2>
+    <p>Northstar 的財務團隊每天需要核對 CRM 和 ERP 之間的訂單金額是否一致:</p>
+<pre>設計方式:每天凌晨兩點,系統把當天所有訂單資料打包,一次送到 ERP 做核對
+使用者體驗:財務人員早上上班,直接看核對結果報表,不需要等系統跑完才能做事</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>CRM System、ERP、財務團隊。</li>
+      <li><strong>資料如何移動?</strong>採批次處理,一天累積一次,凌晨統一傳送。</li>
+      <li><strong>這個設計負責什麼?</strong>核對工作本身不需要即時性,批次處理更省資源,也方便一次檢查完整一天的資料。</li>
+      <li><strong>哪裡可能出錯?</strong>如果凌晨的批次作業失敗,財務人員早上會看到「昨天的資料不見了」,而不是「即時同步失敗」的錯誤,兩者排查方向不同。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先問:「這是每天固定的批次作業,還是應該即時同步的資料?」確認資料原本的設計就是批次,才不會誤以為是同步失敗的緊急事故。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>即時 + 同步</td><td>Process Builder / Flow 的即時觸發動作</td></tr>
+      <tr><td>批次處理</td><td>Batch Apex、排程的資料匯入作業</td></tr>
+      <tr><td>非同步</td><td>Queueable Apex、Future Method</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「即時就等於同步」</h3>
+    <p>兩者是獨立的概念。系統可以做到即時處理,同時讓使用者不用等待(非同步),兩者並不衝突。</p>
+    <h3>誤解二:「批次處理就是系統比較落後」</h3>
+    <p>很多場景刻意選擇批次,是因為不需要即時性,批次反而更穩定、更省資源。選擇的重點是「這個情境需不需要即時」,不是技術新舊的問題。</p>
+    <h3>誤解三:「同步等於比較準確,非同步等於比較不可靠」</h3>
+    <p>非同步一樣可以做到最終資料完全正確,只是使用者看到結果的時間點延後。可靠性靠的是背後的設計(例如有沒有做好錯誤重試),不是同步或非同步本身決定的。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「客戶問資料多久會到」的釐清順序</h2>
+    <ol>
+      <li><strong>先確認客戶問的是哪一件事。</strong>是想知道多久處理一次,還是想知道操作當下要不要等待。</li>
+      <li><strong>確認這個資料流原本的設計是即時、近乎即時,還是批次。</strong>查文件或請工程師確認。</li>
+      <li><strong>確認使用者端的體驗是同步還是非同步。</strong>操作完是立刻看到結果,還是看到「處理中」的暫時狀態。</li>
+      <li><strong>如果客戶期待的頻率跟現況不同,評估調整的可行性與成本。</strong>從批次改成即時,通常是架構層級的改動。</li>
+      <li><strong>把答案用具體的時間與使用者體驗描述給客戶,而不是只說「應該很快」。</strong></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>即時、近乎即時、批次,回答的是「多久送一次」。</li>
+      <li>同步、非同步,回答的是「發送方要不要等結果」。</li>
+      <li>這兩組概念各自獨立,可以自由組合,不要混為一談。</li>
+      <li>客戶問「多久會同步」時,先分清楚他問的究竟是哪一件事,再給答案。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>資料先累積,等到固定時間點才一次處理,這是哪種方式?</h2>
+    <button class="opt" data-val="A" type="button">A. 即時處理</button>
+    <button class="opt" data-val="B" type="button">B. 批次處理</button>
+    <button class="opt" data-val="C" type="button">C. 同步處理</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。資料先累積、到固定時間點才一次處理,正是批次處理的定義。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:一個系統可以做到「資料即時處理」,同時讓使用者不用等待結果(非同步)。</h2>
+    <button class="opt" data-val="A" type="button">否,即時一定要同步等待</button>
+    <button class="opt" data-val="B" type="button">是,兩者是獨立的概念,可以自由組合</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。即時處理回答「多久送一次」,同步/非同步回答「要不要等結果」,兩者是獨立的選擇,可以組合成「即時 + 非同步」。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>使用者發出請求後,原地等待直到收到結果才繼續下一步,這是哪一種方式?</h2>
+    <button class="opt" data-val="A" type="button">A. 同步</button>
+    <button class="opt" data-val="B" type="button">B. 非同步</button>
+    <button class="opt" data-val="C" type="button">C. 批次</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。發出請求後原地等待結果才繼續,正是同步的定義,呼應 1-2 教過的「一問一答」模型。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶問「訂單多久會同步到倉庫系統」。您的第一步應該是?</h2>
+    <button class="opt" data-val="A" type="button">A. 先確認客戶問的是處理頻率,還是下單當下要不要等待</button>
+    <button class="opt" data-val="B" type="button">B. 直接回答「應該很快,大概幾秒鐘」</button>
+    <button class="opt" data-val="C" type="button">C. 請工程師把系統改成完全即時處理</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。「多久會同步」背後可能是兩個不同的問題,先釐清客戶真正想知道的是哪一個,才能給出準確有用的答案。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,第六章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有一個資料流程是批次處理,但客戶一直以為它是即時的?</div>
+    <p>下一章是單元 1 的最後一章,我們會把前六章的概念串起來,看企業系統之間是怎麼互相合作的。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch1-7.html">前往下一章：1-7 企業系統如何互相合作 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '1-6';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-4 Foreign Key 與資料關聯｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 4 章｜Foreign Key 與資料關聯 — 資料表如何互相認識</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Foreign Key 與資料關聯<br>資料表如何互相認識</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-1、4-3 再來。</p>
+    <p>4-1 說過「一張表一個主題,靠關聯連起來」,4-3 給了每筆紀錄一張身分證(PK)。這一章要把這兩件事接起來:資料表之間,到底是怎麼「手牽手」的。</p>
+    <ul>
+      <li>說明 Foreign Key 如何建立兩張表的關聯。</li>
+      <li>看懂「訂單屬於哪位客戶」在資料層的實際存法。</li>
+      <li>理解「孤兒資料」是怎麼產生的,以及它造成的畫面症狀。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「這筆訂單的客戶名稱是空白的」</h2>
+    <p>Northstar Electronics 的營運同仁在訂單清單裡發現怪事:</p>
+    <div class="bubble">「有幾筆訂單,客戶名稱那一欄是空白的,點進去也看不到客戶資料。可是訂單金額、品項都好好的,這是怎麼回事?」</div>
+    <p>訂單資料本身沒壞,壞的是訂單和客戶之間的「連結」。要看懂這個症狀,得先知道:訂單表裡其實不存客戶姓名,只存一個「指向客戶表的編號」。這一章就從這個設計講起。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>訂單上寫的不是名字,是學號</h2>
+    <p>延續上一章學校的比喻。圖書館的借書紀錄簿,不會把學生的姓名、班級、電話全部抄一遍,只會登記<strong>學號</strong>:「2026-03-15,學號 S1024 借了《資料庫入門》」。要知道借書的人是誰,拿學號回學生名冊一查就有。</p>
+    <p>資料庫也一樣。看 Northstar 的兩張表:</p>
+<pre>Customer Table(客戶表)
+客戶編號(PK)  姓名    Email
+C001          王小明  wang@example.com
+C002          李美麗  lee@example.com
+
+Order Table(訂單表)
+訂單編號(PK)  訂單日期    金額    客戶編號 ← 這欄存的是客戶表的 PK
+O-5001        2026-07-01  12,000  C001
+O-5002        2026-07-03   8,500  C002
+O-5003        2026-07-05  20,000  C001</pre>
+    <p>訂單表裡那欄「客戶編號」,存的就是客戶表的 PK。這種「存放另一張表 PK 的欄位」,叫做 <strong>Foreign Key(外鍵,簡稱 FK)</strong>。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      FK 是「指向別張表身分證的欄位」。訂單不抄客戶資料,只記客戶的編號——要看客戶詳情,順著編號回客戶表查。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>如果學號查不到人,借書紀錄就成了謎</h2>
+    <p>想像一個狀況:學生名冊裡,S1024 這一頁被撕掉了。借書紀錄簿上還留著「S1024 借了書」,但拿著學號去查,查無此人。這筆借書紀錄就成了「有紀錄、卻對不到人」的懸案。</p>
+    <p>資料庫裡同樣的事,叫做<strong>孤兒資料(Orphaned Record)</strong>:訂單的 FK 指向 C099,但客戶表裡的 C099 已經被刪除了(或從來沒有存在過,例如匯入時打錯編號)。結果就是開頭的症狀——訂單本身完好,但「客戶名稱」顯示空白,因為順著編號去查,查不到人。</p>
+    <p>畫面上的「客戶名稱」,其實是系統即時拿 FK 去客戶表查出來的,不是存在訂單裡的。理解這一點,「訂單好好的、客戶名稱卻空白」這個怪症狀,就一點也不怪了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:28%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>Foreign Key<br>外鍵</strong></td><td>資料表中存放「另一張表 Primary Key 值」的欄位,用來建立兩張表之間的關聯</td></tr>
+      <tr><td><strong>資料關聯<br>Relationship</strong></td><td>透過 FK 指向 PK 所形成的表與表之間的連結關係</td></tr>
+    </table>
+    <p>一句話總結:PK 是身分證,FK 是「寫著別人身分證字號的欄位」。訂單表的客戶編號欄(FK)指向客戶表的客戶編號欄(PK),兩張表就這樣認識了彼此。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>畫面上的一頁訂單詳情,背後查了兩張表</h2>
+    <p>使用者點開訂單 O-5001 的詳情頁,畫面顯示訂單資訊和客戶姓名。背後發生的事:</p>
+<pre>1. 系統用訂單編號 O-5001(PK)找到訂單表裡那一筆
+2. 讀到這筆訂單的客戶編號欄(FK)= C001
+3. 拿 C001 去客戶表,找到 PK 為 C001 的那一筆
+4. 取出姓名「王小明」,和訂單資訊一起呈現在畫面上</pre>
+    <p>畫面上看似「一筆資料」,底層其實是兩張表靠 FK 串出來的組合。這個「串表」的動作,正式名稱叫 JOIN,4-7 會專門教它。現在先記住:<strong>畫面上的一頁,常常是好幾張表的合體。</strong></p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:看懂「刪除資料」的連鎖效應</h3>
+    <p>客戶要求「把測試用的客戶資料刪掉」,懂 FK 的您會先問:「這些客戶名下有沒有訂單?」直接刪掉客戶,他們的訂單就會變成孤兒資料。正確的做法需要先決定:訂單要跟著刪?還是轉掛到別的客戶?還是乾脆不刪客戶、只做停用標記?這個問題,不懂關聯的人根本不會想到要問。</p>
+    <h3>場景二:資料匯入的順序有講究</h3>
+    <p>要同時匯入客戶和訂單,必須<strong>先匯客戶、再匯訂單</strong>——因為訂單的 FK 要指向已存在的客戶編號。順序顛倒,訂單匯入時找不到對應的客戶,要嘛報錯、要嘛產生一批孤兒資料。安排資料轉移計畫時,這是排順序的基本邏輯。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>不重複抄寫,是關聯設計的核心理由</h2>
+    <h3>概念一:資料只存一份,其他地方用 FK 指過去</h3>
+    <p>如果每筆訂單都抄一份客戶姓名、電話,客戶改電話時就得改遍所有訂單,漏改一筆就資料不一致。姓名電話只存在客戶表這一份,訂單用 FK 指過去——客戶改資料,只改一個地方,所有訂單「看到」的自動都是新的。這個「單一事實來源」的精神,單元 5 的 Source of Truth 會再放大講。</p>
+    <h3>概念二:FK 的值,必須真的存在於對方表裡</h3>
+    <p>設計良好的資料庫會強制檢查:訂單的客戶編號,必須是客戶表裡真實存在的 PK,否則拒絕寫入。這個檢查能防止孤兒資料產生。但不是所有系統都有開啟這種檢查,尤其是靠匯入、整合寫入的資料,更容易溜進無效的 FK 值。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>關聯是有方向的</h2>
+    <h3>概念三:FK 放在「多」的那一邊</h3>
+    <p>一位客戶有很多筆訂單,但一筆訂單只屬於一位客戶。FK(客戶編號)放在訂單表——「多」的那一邊,每筆訂單各自記著自己屬於誰。這個「一對多」的樣式,是企業資料裡最常見的關聯形狀,下一章會把所有形狀一次講齊。</p>
+    <h3>概念四:刪除與變更,要沿著關聯想後果</h3>
+    <p>動客戶表的一筆資料前,先想:有哪些表的 FK 指著它?訂單、報價、客服紀錄……牽動的範圍,就是這筆資料的「被依賴程度」。這和 1-7 教過的系統依賴是同一種思考,只是從系統層縮小到了表與表之間。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Primary Key vs Foreign Key</td><td>PK 是「自己這張表」每筆紀錄的身分證;FK 是「存著別張表身分證號碼」的欄位。同一個值(如 C001)在客戶表是 PK,出現在訂單表裡就是 FK。</td></tr>
+      <tr><td>「畫面顯示的客戶名稱」vs「訂單表裡存的資料」</td><td>訂單表裡通常只存客戶編號(FK),畫面上的客戶名稱是即時去客戶表查出來的。名稱顯示空白,常是關聯斷了,不是訂單資料壞了。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的空白客戶之謎</h2>
+    <p>追查開頭「訂單的客戶名稱空白」事件,發現:</p>
+<pre>症狀:12 筆訂單的客戶名稱顯示空白
+追查:這 12 筆訂單的客戶編號,都指向 C0871
+背景:三個月前,管理員「清理測試資料」時,把 C0871 這筆客戶刪除了
+      但沒有處理它名下的訂單 → 12 筆訂單成了孤兒資料</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>Customer Table、Order Table、當時執行清理的管理員。</li>
+      <li><strong>資料如何移動?</strong>客戶紀錄被刪除,但訂單的 FK 還指著已不存在的編號。</li>
+      <li><strong>各部分負責什麼?</strong>畫面的客戶名稱靠 FK 即時查詢;查無此人,就顯示空白。</li>
+      <li><strong>哪裡可能出錯?</strong>刪除客戶前,沒有檢查「有哪些資料指著它」;系統也沒有開啟防止孤兒資料的強制檢查。</li>
+      <li><strong>第一個合理的檢查方向?</strong>看到「關聯欄位顯示空白」,先查 FK 的值指向的那筆紀錄還存不存在,再回溯它是什麼時候、被誰刪除的。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>Foreign Key</td><td>Lookup Relationship / Master-Detail Relationship 欄位</td></tr>
+      <tr><td>刪除的連鎖處理</td><td>Master-Detail 關係中,刪除主紀錄會連帶刪除明細紀錄</td></tr>
+    </table>
+    <p>Salesforce 的 Master-Detail 就是把「刪除連鎖」規則內建進關聯:主檔刪了,明細跟著刪,從機制上避免孤兒資料。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「訂單畫面有客戶姓名,所以訂單表裡存著姓名」</h3>
+    <p>訂單表通常只存客戶編號(FK),姓名是畫面即時去客戶表查的。這也是為什麼客戶改名後,所有歷史訂單顯示的名字會「自動」跟著變。</p>
+    <h3>誤解二:「刪一筆資料,就只影響那一筆」</h3>
+    <p>被 FK 指著的資料,刪除時會讓指著它的紀錄變成孤兒。刪除前先問:「有誰指著它?」</p>
+    <h3>誤解三:「匯入資料,先匯哪張表都一樣」</h3>
+    <p>有 FK 的表,必須等它指向的表先有資料。先客戶、後訂單,順序是關聯決定的,不是隨便排的。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「關聯欄位顯示空白」的檢查順序</h2>
+    <ol>
+      <li><strong>確認這個欄位是不是關聯欄位。</strong>它顯示的內容,是自己存的,還是從別張表查來的?</li>
+      <li><strong>查出這筆紀錄 FK 的實際值。</strong>它指向哪個編號?</li>
+      <li><strong>確認那個編號在對方表裡還存不存在。</strong>不存在,就是孤兒資料。</li>
+      <li><strong>回溯對方紀錄的下落。</strong>被刪除了?什麼時候、被誰、為什麼刪?</li>
+      <li><strong>決定修復方式並防止再發生。</strong>補回被刪的紀錄、或把孤兒轉掛到正確對象;同時檢討刪除流程要不要加上關聯檢查。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>FK 是「存著別張表 PK 值」的欄位,靠它,兩張表建立起關聯。</li>
+      <li>資料只存一份,其他表用 FK 指過去——這是避免重複抄寫、保持一致的核心設計。</li>
+      <li>畫面上的關聯資訊(如訂單上的客戶名稱)是即時查出來的;顯示空白,通常是關聯斷了。</li>
+      <li>刪除被指著的資料會製造孤兒;刪除前先問「有誰指著它」,匯入時先匯被指的那張表。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>訂單表裡的「客戶編號」欄位,存放的是客戶表的 PK 值。這個欄位在訂單表中叫做什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. Primary Key</button>
+    <button class="opt" data-val="B" type="button">B. Foreign Key</button>
+    <button class="opt" data-val="C" type="button">C. Unique Key</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。存放另一張表 PK 值、用來建立關聯的欄位,就是 Foreign Key(外鍵)。訂單表自己的 PK 是訂單編號。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:客戶改了姓名之後,歷史訂單畫面上顯示的客戶名稱通常會自動變成新名字。</h2>
+    <button class="opt" data-val="A" type="button">是,因為名稱是即時透過 FK 查客戶表得來的</button>
+    <button class="opt" data-val="B" type="button">否,每筆訂單都抄了一份舊名字</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「是」</strong>。訂單表通常只存客戶編號,畫面上的名稱是即時查詢的結果,所以客戶表一改,所有訂單顯示的名稱都跟著更新。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>要同時匯入「客戶」和「訂單」兩批資料,正確的順序是?</h2>
+    <button class="opt" data-val="A" type="button">A. 先匯訂單,再匯客戶</button>
+    <button class="opt" data-val="B" type="button">B. 順序無所謂,反正最後都會進去</button>
+    <button class="opt" data-val="C" type="button">C. 先匯客戶,再匯訂單,因為訂單的 FK 要指向已存在的客戶</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。訂單的客戶編號(FK)必須指向已存在的客戶紀錄,所以被指向的客戶表要先匯入,順序是關聯決定的。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:幾筆訂單的「客戶名稱」顯示空白,但訂單金額、品項都正常。第一個合理的檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 查這些訂單的客戶編號(FK)指向的客戶紀錄,是否已不存在</button>
+    <button class="opt" data-val="B" type="button">B. 重新開機試試</button>
+    <button class="opt" data-val="C" type="button">C. 把這些訂單刪掉重建</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。關聯欄位空白的典型原因是孤兒資料:FK 指向的紀錄已被刪除。先確認關聯的另一端還在不在,再決定怎麼修復。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上專案的系統裡,挑兩個明顯相關的資料(例如客戶與案件),猜猜 FK 放在哪一張表、指向哪一張表?</div>
+    <p>下一章要把關聯的「形狀」講齊:一對一、一對多、多對多——以及為什麼多對多需要多一張中間表。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-5.html">前往下一章：4-5 One-to-One、One-to-Many、Many-to-Many →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-4';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

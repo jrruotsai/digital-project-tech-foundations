@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-5 One-to-One、One-to-Many、Many-to-Many｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 5 章｜One-to-One、One-to-Many、Many-to-Many</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>One-to-One、One-to-Many<br>Many-to-Many</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-4 再來。</p>
+    <p>上一章學會了 FK 怎麼把兩張表牽起來。這一章要把「牽法」分類:兩個東西之間的關係,只有三種基本形狀。看懂形狀,您就能在需求訪談時,快速判斷資料該怎麼設計。</p>
+    <ul>
+      <li>分辨一對一、一對多、多對多三種關聯類型。</li>
+      <li>給定兩個實體,判斷它們之間是哪一種關係。</li>
+      <li>理解為什麼多對多需要一張「中間表」。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「一張訂單有很多產品,一個產品也出現在很多訂單裡」</h2>
+    <p>Northstar Electronics 的系統管理員在設計訂單資料時卡住了:</p>
+    <div class="bubble">「訂單表加一個『產品編號』欄位?可是一張訂單常常買好幾樣產品啊。那在產品表加『訂單編號』?也不對,同一個產品會被很多張訂單買到……到底該把 FK 放在哪一邊?」</div>
+    <p>他遇到的正是「多對多」——三種關聯裡最需要技巧的一種。答案是:<strong>兩邊都不放,另外開第三張表</strong>。為什麼?這一章講完,您就懂了。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>用生活關係認識三種形狀</h2>
+    <p>三種關聯,生活裡都找得到對應:</p>
+    <p><strong>One-to-One(一對一)</strong>:一個人,一本護照。一個人同時只有一本有效護照,一本護照也只屬於一個人。</p>
+    <p><strong>One-to-Many(一對多)</strong>:一位媽媽,好幾個小孩。每個小孩只有一位媽媽,但一位媽媽可以有很多小孩。上一章的「一位客戶、多筆訂單」正是這一種——它也是企業資料裡最常見的形狀。</p>
+    <p><strong>Many-to-Many(多對多)</strong>:學生與社團。一位學生可以參加多個社團,一個社團也有很多位學生。誰也不「專屬於」誰。</p>
+    <div class="note">
+      <span class="nt">判斷的口訣</span>
+      拿兩個東西,各問一次:「一個 A 可以對到幾個 B?一個 B 可以對到幾個 A?」兩個答案組合起來,就是關聯的形狀。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>多對多,為什麼要多開一張表</h2>
+    <p>回到學生與社團。學校想記錄「誰參加了什麼社團」,該記在哪?記在學生名冊上,一個學生參加三個社團就要三個欄位,參加第四個就爆了(4-1 提過這種窘境);記在社團名冊上,同樣的問題換邊發生。</p>
+    <p>學校實際的做法是:準備一本<strong>「社團報名紀錄簿」</strong>,每一行記一組配對:「學號 S1024 – 吉他社」「學號 S1024 – 排球社」「學號 S2077 – 吉他社」。學生要參加幾個社團就登記幾行,誰也不會爆。</p>
+    <p>資料庫一模一樣:多對多的解法,是在兩張表中間開第三張表,叫<strong>中間表(Junction Table)</strong>。它每一筆紀錄就是「一組配對」,身上帶著兩個 FK,一個指向學生,一個指向社團。訂單與產品的難題同解:開一張 <strong>Order Item(訂單明細)</strong>表,每筆記「哪張訂單、買了哪個產品、數量多少」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三種關聯的正式說法</h2>
+    <table>
+      <tr><th style="width:24%;">類型</th><th>定義</th><th style="width:30%;">FK 放哪裡</th></tr>
+      <tr><td><strong>One-to-One<br>一對一</strong></td><td>A 的一筆最多對 B 的一筆,反之亦然</td><td>任一邊放 FK 並設唯一約束</td></tr>
+      <tr><td><strong>One-to-Many<br>一對多</strong></td><td>A 的一筆可對 B 的多筆;B 的每筆只屬於 A 的一筆</td><td>放在「多」的那一邊(4-4 教過)</td></tr>
+      <tr><td><strong>Many-to-Many<br>多對多</strong></td><td>兩邊的每一筆,都可以對到對方的多筆</td><td>兩邊都不放;開中間表,放兩個 FK</td></tr>
+    </table>
+    <p><strong>Junction Table(中間表)</strong>:專門用來承接多對多關聯的表,每筆紀錄代表一組配對,通常帶著兩邊的 FK,也可以順便記錄配對本身的屬性(例如訂單明細的「數量」「單價」)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>訂單與產品,拆成三張表之後</h2>
+<pre>Order Table(訂單)          Product Table(產品)
+訂單編號(PK)  客戶編號      產品編號(PK)  品名      單價
+O-5001        C001          P-100         無線耳機   2,500
+O-5002        C002          P-200         行動電源   1,200
+
+Order Item Table(訂單明細 = 中間表)
+明細編號(PK)  訂單編號(FK)  產品編號(FK)  數量
+I-9001        O-5001        P-100         2
+I-9002        O-5001        P-200         1
+I-9003        O-5002        P-100         1</pre>
+    <p>讀一下這張中間表:O-5001 這張訂單買了兩支無線耳機和一個行動電源;P-100 這個產品同時出現在兩張訂單裡。一張訂單多個產品、一個產品多張訂單,全靠明細表一行一行的配對來承接。畫面上看到的「訂單明細清單」,正是這張表的內容。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:需求訪談時,判斷資料設計的複雜度</h3>
+    <p>客戶說「一個客戶要能對應多個業務負責人」,您立刻能判斷:一位業務也會負責多位客戶,這是多對多,需要中間表——而且中間表上可能還要記「主要負責/次要負責」這種配對屬性。這句話背後的工作量,和單純加一個欄位完全不同。</p>
+    <h3>場景二:看懂為什麼報表要「攤開」明細</h3>
+    <p>「上個月賣最好的產品是哪個?」這個問題,答案不在訂單表,也不在產品表,而在訂單明細表——把所有明細按產品加總數量才算得出來。知道資料的形狀,才知道報表該從哪張表出發。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>形狀是問出來的,不是猜出來的</h2>
+    <h3>概念一:兩個方向各問一次,答案才完整</h3>
+    <p>只問「一位客戶有幾筆訂單?」(很多筆)還不夠,要再問「一筆訂單屬於幾位客戶?」(一位)。兩個答案合起來才確定是一對多。需求訪談時把這兩個問題掛在嘴邊,資料設計的方向就不會錯。</p>
+    <h3>概念二:今天的一對多,可能是明天的多對多</h3>
+    <p>「一個客戶一個業務負責」今天成立,明年組織調整成「大客戶多人共管」就變多對多了。訪談時多問一句「未來有沒有可能一個對多個?」,能讓設計預留彈性,省下日後重工。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>中間表不只是橋,它自己也載貨</h2>
+    <h3>概念三:配對本身的資訊,記在中間表上</h3>
+    <p>訂單明細的「數量」「成交單價」,學生社團的「入社日期」「職位」——這些既不屬於訂單/學生,也不屬於產品/社團,而是屬於「這組配對」。中間表正是它們唯一合理的家。</p>
+    <h3>概念四:一對一比想像中少用,遇到先想「為什麼要拆」</h3>
+    <p>既然一對一,何不併成一張表?實務上拆開通常有特殊理由:例如把極機密的欄位(薪資)獨立成表,方便另外管控權限。看到一對一的設計,可以問問當初拆開的理由,常常能學到系統的歷史脈絡。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:32%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>一對多 vs 多對多</td><td>關鍵在「多的那一邊,回頭看是一還是多」。一筆訂單只屬於一位客戶 → 一對多;一個產品出現在多張訂單 → 多對多。兩個方向都要問。</td></tr>
+      <tr><td>中間表 vs 一般資料表</td><td>中間表的核心身分是「配對紀錄」,身上帶兩個 FK;它也可以有自己的欄位(數量、日期),所以外觀跟一般表很像。分辨方法:少了它,兩張表就對不起來的,就是中間表。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的客戶分群需求</h2>
+    <p>行銷團隊提出需求:「我們要幫客戶貼標籤分群,例如 VIP、電子報訂閱者、活動常客,一個客戶可以有多個標籤。」</p>
+<pre>判斷:一個客戶多個標籤?是。一個標籤多位客戶?是。 → 多對多
+
+設計:
+Customer Table(客戶)     Tag Table(標籤)
+客戶編號(PK)             標籤編號(PK)  標籤名稱
+
+Customer Tag Table(中間表)
+編號(PK)  客戶編號(FK)  標籤編號(FK)  貼上日期</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>客戶表、標籤表、客戶標籤中間表、提需求的行銷團隊。</li>
+      <li><strong>資料如何移動?</strong>幫客戶貼一個標籤 = 在中間表新增一筆配對;撕掉 = 刪除那筆配對。客戶和標籤本身都不用動。</li>
+      <li><strong>各表負責什麼?</strong>標籤表管「有哪些標籤可用」;中間表管「誰被貼了什麼」。</li>
+      <li><strong>哪裡可能出錯?</strong>如果偷懶做成客戶表上一個文字欄位塞「VIP,電子報,常客」,之後要查「所有 VIP 客戶」就得用文字搜尋,又慢又容易錯(「VIP」會誤中「VVIP」),改標籤名稱更是災難。</li>
+      <li><strong>第一個合理的檢查方向?</strong>分群查詢結果怪怪的時,先確認標籤是正規的中間表設計,還是文字欄位硬塞——後者是很多老系統資料品質問題的根源。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>一對多</td><td>Lookup / Master-Detail Relationship</td></tr>
+      <tr><td>多對多的中間表</td><td>Junction Object(帶兩個 Master-Detail 的自訂物件);標準案例如 Opportunity 與 Contact 之間的 OpportunityContactRole</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「多對多就把 FK 兩邊各放一個」</h3>
+    <p>FK 是單值欄位,一格只能指一筆。多對多的本質是「多組配對」,只有中間表能一行一組地承接。</p>
+    <h3>誤解二:「用逗號把多個值塞進一個欄位就好」</h3>
+    <p>文字欄位塞「VIP,常客」看似省事,但查詢、統計、改名全都會出問題。看到這種設計,幾乎可以預言它日後的資料品質麻煩。</p>
+    <h3>誤解三:「關聯類型是技術細節,訪談時不用問這麼細」</h3>
+    <p>「一個對一個還是一個對多個」直接決定表結構與工作量,而答案只有業務方知道。這正是顧問在需求訪談中最有價值的提問之一。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「關聯資料怪怪的」的檢查順序</h2>
+    <ol>
+      <li><strong>先確認兩個實體理論上的關聯形狀。</strong>兩個方向各問一次「一個對幾個」。</li>
+      <li><strong>確認系統實際的設計是否符合這個形狀。</strong>多對多有沒有正規的中間表?還是文字欄位硬塞?</li>
+      <li><strong>如果有中間表,檢查配對紀錄是否正確。</strong>重複配對?缺配對?孤兒配對(4-4 教過)?</li>
+      <li><strong>報表數字怪異時,確認是從哪張表出發統計的。</strong>多對多的統計,通常要從中間表出發。</li>
+      <li><strong>把形狀與設計的落差回報給工程師。</strong>「業務上是多對多,但系統做成一對多」這句話,就是根因描述。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>關聯只有三種形狀:一對一、一對多、多對多;判斷方法是兩個方向各問一次「一個對幾個」。</li>
+      <li>一對多最常見,FK 放在「多」的那一邊;一對一少見,遇到先問拆開的理由。</li>
+      <li>多對多靠中間表解決:每筆紀錄一組配對,帶兩個 FK,配對本身的屬性也記在這裡。</li>
+      <li>把多個值用逗號塞進一個欄位,是日後資料品質問題的預告,訪談時值得主動確認。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>「一位客戶可以有多筆訂單,一筆訂單只屬於一位客戶」,這是哪種關聯?</h2>
+    <button class="opt" data-val="A" type="button">A. One-to-One</button>
+    <button class="opt" data-val="B" type="button">B. One-to-Many</button>
+    <button class="opt" data-val="C" type="button">C. Many-to-Many</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。一邊可以對多筆、另一邊只屬於一筆,是典型的一對多,FK 放在訂單(多)那一邊。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 2/4</span>
+    <h2>「訂單與產品」是多對多關聯,正確的資料設計是?</h2>
+    <button class="opt" data-val="A" type="button">A. 訂單表加一個產品編號欄位</button>
+    <button class="opt" data-val="B" type="button">B. 產品表加一個訂單編號欄位</button>
+    <button class="opt" data-val="C" type="button">C. 另開訂單明細表(中間表),帶訂單與產品兩個 FK</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。多對多無法靠單邊的 FK 承接,需要中間表一行一組配對,數量、單價等配對屬性也記在中間表上。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>是非題:判斷兩個實體的關聯類型,只問「一個 A 對幾個 B」就夠了。</h2>
+    <button class="opt" data-val="A" type="button">否,兩個方向都要問,答案才完整</button>
+    <button class="opt" data-val="B" type="button">是,問一個方向就夠</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否,兩個方向都要問」</strong>。「一位客戶多筆訂單」還不能區分一對多和多對多,要再問「一筆訂單屬於幾位客戶」才能確定形狀。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶要「一個客戶可以貼多個標籤」,系統卻把標籤用逗號塞在客戶表的一個文字欄位裡。最可能出現什麼問題?</h2>
+    <button class="opt" data-val="A" type="button">A. 沒有問題,這樣最省空間</button>
+    <button class="opt" data-val="B" type="button">B. 查詢與統計困難、容易誤中相似字、改標籤名稱要改遍所有客戶</button>
+    <button class="opt" data-val="C" type="button">C. 客戶資料會自動消失</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。多對多硬塞進單一欄位,查詢只能靠文字搜尋(慢且易誤中),標籤改名要改遍每筆客戶,正規解法是中間表。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上專案裡,找一組多對多的關係(例如客戶與活動、使用者與角色),看看系統是用中間表,還是用其他方式硬接的?</div>
+    <p>資料的形狀都認識了,下一章終於要開口「問」資料庫了——SQL 查詢的基本概念。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-6.html">前往下一章：4-6 SQL 查詢的基本概念 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-5';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

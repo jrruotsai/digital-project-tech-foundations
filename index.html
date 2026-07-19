@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業應用顧問技術基礎培訓｜課程首頁</title>
+<style>
+  :root{
+    --bg:#FAF9F5;
+    --surface:#FFFFFF;
+    --surface-warm:#F5F4ED;
+    --ink:#3D3929;
+    --ink-soft:#6E6B64;
+    --ink-faint:#9A968C;
+    --accent:#C96442;
+    --accent-deep:#A84F31;
+    --accent-soft:#F9EDE5;
+    --accent-faint:#FCF6F1;
+    --line:#E5E3D9;
+    --ok:#5E8C61;
+    --ok-soft:#EDF3EC;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16px; line-height:1.9;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:0 24px 80px;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+
+  /* ===== Hero ===== */
+  .hero{padding:64px 24px 20px; text-align:center;}
+  .hero .kicker{
+    color:var(--accent); font-size:13.5px; letter-spacing:.22em;
+    text-transform:uppercase; margin-bottom:14px;
+  }
+  .hero h1{font-size:36px; margin:0 0 12px; line-height:1.4; color:var(--ink);}
+  .hero .sub{color:var(--ink-soft); font-size:17px; max-width:620px; margin:0 auto 26px;}
+  .hero .meta{display:flex; justify-content:center; flex-wrap:wrap; gap:8px;}
+  .hero .meta span{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:4px 16px; font-size:13.5px; color:var(--ink-soft);
+  }
+
+  /* ===== Progress ===== */
+  .progress-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:24px 30px; margin:36px 0 12px; box-shadow:0 1px 4px rgba(61,57,41,.05);
+  }
+  .progress-card h2{margin:0 0 6px; font-size:20px;}
+  .progress-card .pnum{color:var(--accent); font-weight:700;}
+  .pbar{height:10px; background:var(--surface-warm); border-radius:999px; overflow:hidden; margin:12px 0 6px;}
+  .pbar > div{height:100%; width:0%; background:var(--accent); border-radius:999px; transition:width .5s ease;}
+  .progress-card .phint{font-size:13.5px; color:var(--ink-faint); margin:4px 0 0;}
+  .progress-card button{
+    margin-top:10px; background:none; border:1px solid var(--line); border-radius:8px;
+    padding:4px 14px; font-size:13px; color:var(--ink-faint); cursor:pointer;
+    font-family:inherit;
+  }
+  .progress-card button:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* ===== Intro ===== */
+  .intro{
+    background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:16px;
+    padding:22px 30px; margin:18px 0 40px;
+  }
+  .intro h2{margin:0 0 8px; font-size:20px;}
+  .intro p{margin:8px 0; color:var(--ink);}
+
+  /* ===== Stage & modules ===== */
+  .stage{
+    margin:52px 0 8px; padding-bottom:8px; border-bottom:2px solid var(--accent);
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  .stage h2{margin:0; font-size:24px; color:var(--ink);}
+  .stage small{color:var(--ink-faint); font-size:14px;}
+
+  .module{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    margin:20px 0; overflow:hidden; box-shadow:0 1px 4px rgba(61,57,41,.05);
+  }
+  .module-head{
+    padding:16px 26px 14px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); background:var(--surface-warm);
+  }
+  .module-head .mno{
+    background:var(--accent); color:#fff; border-radius:8px; padding:2px 12px;
+    font-weight:700; font-size:13.5px; white-space:nowrap;
+  }
+  .module-head h3{margin:0; font-size:19px;}
+  .module-head .mprog{margin-left:auto; font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+
+  table{border-collapse:collapse; width:100%; font-size:15px;}
+  td{padding:11px 16px; border-top:1px solid var(--line); vertical-align:middle;}
+  tr:first-child td{border-top:none;}
+  td.no{width:64px; text-align:center; color:var(--ink-faint); font-size:14px; white-space:nowrap;}
+  td.st{width:96px; text-align:right; white-space:nowrap;}
+  tr.done td.no{color:var(--ok);}
+  tr.done td.tt{color:var(--ink-faint);}
+
+  a.golink{
+    display:inline-block; background:var(--accent); color:#fff; text-decoration:none;
+    border-radius:8px; padding:3px 14px; font-size:13.5px;
+  }
+  a.golink:hover{background:var(--accent-deep);}
+  a.golink.again{background:var(--surface); color:var(--ok); border:1px solid var(--ok);}
+  span.soon{color:var(--ink-faint); font-size:13px;}
+  span.donemark{color:var(--ok); font-weight:700; margin-right:6px;}
+
+  footer{margin-top:70px; padding-top:20px; border-top:1px solid var(--line);
+    color:var(--ink-faint); font-size:13px; text-align:center;}
+
+  /* ===== 左側快捷索引 ===== */
+  .sidenav{
+    display:none; position:fixed; top:0; left:0; bottom:0; width:232px;
+    background:var(--surface); border-right:1px solid var(--line); overflow-y:auto;
+    padding:18px 14px 30px; z-index:5;
+  }
+  .sidenav .sn-title{
+    font-size:14px; font-weight:700; color:var(--ink); margin:0 0 4px;
+    font-family:Georgia,"Times New Roman","Noto Serif TC",serif;
+  }
+  .sidenav h4{font-size:12.5px; color:var(--ink-faint); margin:18px 0 4px; font-weight:700;}
+  .sidenav details.sn-acc{margin:6px 0;}
+  .sidenav details.sn-acc summary{
+    list-style:none; cursor:pointer; color:var(--ink); font-size:13px;
+    font-weight:700; line-height:1.5; padding:5px 6px; border-radius:8px;
+    display:flex; align-items:baseline; gap:6px;
+  }
+  .sidenav details.sn-acc summary::-webkit-details-marker{display:none;}
+  .sidenav details.sn-acc summary::before{
+    content:"▸"; color:var(--accent); font-size:11px; flex:none;
+    transition:transform .15s ease;
+  }
+  .sidenav details.sn-acc[open] summary::before{content:"▾";}
+  .sidenav details.sn-acc summary:hover{background:var(--surface-warm); color:var(--accent);}
+  .sidenav details.sn-acc .sn-body{padding:4px 6px 6px 20px;}
+  .sidenav a.unitgo{
+    display:block; font-size:12px; color:var(--ink-faint); text-decoration:none; margin:0 0 4px;
+  }
+  .sidenav a.unitgo:hover{color:var(--accent);}
+  .sidenav .sn-ch{border-left:1px solid var(--line); margin-left:2px;}
+  .sidenav .sn-ch a{
+    display:block; font-size:12.5px; color:var(--ink-soft); text-decoration:none;
+    padding:3px 8px 3px 10px; border-radius:0 6px 6px 0; line-height:1.6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sidenav .sn-ch a:hover{background:var(--surface-warm); color:var(--accent);}
+  .sidenav .sn-ch a.done{color:var(--ok);}
+  @media (min-width:1200px){
+    .sidenav{display:block;}
+    body{padding-left:232px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidenav" id="sidenav" aria-label="全部章節快捷索引"></nav>
+
+<div class="hero">
+  <div class="kicker">TECHNICAL FOUNDATIONS FOR DIGITAL PROJECTS</div>
+  <h1>企業應用與數位專案技術基礎</h1>
+  <p class="sub">寫給參與企業系統與數位專案工作者的技術基礎課程。每章約 30 分鐘，從系統運作、資料、整合到問題排查，逐步建立與工程師溝通及參與技術專案所需的基礎能力。</p>
+  <div class="meta">
+    <span>4 個階段</span><span>13 個單元</span><span>122 個小章節</span><span>每章約 30 分鐘</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- 進度 -->
+  <div class="progress-card">
+    <h2>我的學習進度</h2>
+    <p style="margin:0;">已完成 <span class="pnum" id="doneCount">0</span> / <span id="totalCount">122</span> 章</p>
+    <div class="pbar"><div id="pbarFill"></div></div>
+    <p class="phint">學習進度會儲存在目前裝置的瀏覽器中，不會上傳或收集個人資料。更換裝置、瀏覽器、使用無痕模式或清除網站資料後，進度可能會重新計算。</p>
+    <button id="resetBtn" type="button">清除全部進度</button>
+  </div>
+
+  <!-- 使用方式 -->
+  <div class="intro">
+    <h2>開始學習前，你需要知道的事</h2>
+    <p>透過這門課程，幫助你理解系統如何運作、技術團隊在討論什麼，以及遇到問題時應該先確認哪些資訊、與誰溝通。</p>
+    <p>每一章都是獨立的小單元，可以依序閱讀，也可以從目前最需要的主題開始。章節中會穿插簡短檢核，透過解題確認自己是否掌握核心概念。</p>
+    <p>建議從單元 1 開始，依序往下閱讀。</p>
+  </div>
+
+  <!-- ============ 第一階段 ============ -->
+  <div class="stage"><h2>第一階段：資訊系統的共同語言</h2><small>單元 1–3</small></div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 1</span><h3>企業資訊系統架構</h3><span class="mprog" data-mod="m1"></span></div>
+    <table data-mod="m1">
+      <tr data-ch="1-1"><td class="no">1-1</td><td class="tt">前端、後端與資料庫 — 系統的三層分工</td><td class="st"><a class="golink" href="chapters/ch1-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-2"><td class="no">1-2</td><td class="tt">Client、Server 與 Browser — 誰在發問，誰在回答</td><td class="st"><a class="golink" href="chapters/ch1-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-3"><td class="no">1-3</td><td class="tt">Website、Web App 與 Mobile App 有什麼不同</td><td class="st"><a class="golink" href="chapters/ch1-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-4"><td class="no">1-4</td><td class="tt">SaaS、PaaS 與 IaaS — 雲端服務的三種形態</td><td class="st"><a class="golink" href="chapters/ch1-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-5"><td class="no">1-5</td><td class="tt">測試環境與正式環境 — 為什麼不能直接改 Production</td><td class="st"><a class="golink" href="chapters/ch1-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-6"><td class="no">1-6</td><td class="tt">即時、批次、同步與非同步 — 資料什麼時候到</td><td class="st"><a class="golink" href="chapters/ch1-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="1-7"><td class="no">1-7</td><td class="tt">企業系統如何互相合作 — 依賴關係與資料流</td><td class="st"><a class="golink" href="chapters/ch1-7.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 2</span><h3>網路與 Web 運作基礎</h3><span class="mprog" data-mod="m2"></span></div>
+    <table data-mod="m2">
+      <tr data-ch="2-1"><td class="no">2-1</td><td class="tt">網站網址與 DNS — 網址是怎麼變成伺服器的</td><td class="st"><a class="golink" href="chapters/ch2-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-2"><td class="no">2-2</td><td class="tt">HTTP Request 與 Response — 一問一答的規則</td><td class="st"><a class="golink" href="chapters/ch2-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-3"><td class="no">2-3</td><td class="tt">HTTP Method — GET 和 POST 到底差在哪</td><td class="st"><a class="golink" href="chapters/ch2-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-4"><td class="no">2-4</td><td class="tt">Status Code — 系統回覆的暗號</td><td class="st"><a class="golink" href="chapters/ch2-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-5"><td class="no">2-5</td><td class="tt">HTTPS、Certificate 與安全傳輸</td><td class="st"><a class="golink" href="chapters/ch2-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-6"><td class="no">2-6</td><td class="tt">Cookie、Session 與 Browser Storage</td><td class="st"><a class="golink" href="chapters/ch2-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-7"><td class="no">2-7</td><td class="tt">Cache 與 CORS — 為什麼畫面是舊的／請求被擋掉</td><td class="st"><a class="golink" href="chapters/ch2-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="2-8"><td class="no">2-8</td><td class="tt">使用 Browser Network 觀察 Request（實作）</td><td class="st"><a class="golink" href="chapters/ch2-8.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 3</span><h3>HTML、CSS、JavaScript 與表單</h3><span class="mprog" data-mod="m3"></span></div>
+    <table data-mod="m3">
+      <tr data-ch="3-1"><td class="no">3-1</td><td class="tt">HTML 如何構成網頁 — Tag、Element 與 Attribute</td><td class="st"><a class="golink" href="chapters/ch3-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-2"><td class="no">3-2</td><td class="tt">常見 HTML 元素 — div、a、img 與 iframe</td><td class="st"><a class="golink" href="chapters/ch3-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-3"><td class="no">3-3</td><td class="tt">表單欄位與資料送出 — form 與 input</td><td class="st"><a class="golink" href="chapters/ch3-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-4"><td class="no">3-4</td><td class="tt">CSS 如何控制樣式 — Selector、Class 與 ID</td><td class="st"><a class="golink" href="chapters/ch3-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-5"><td class="no">3-5</td><td class="tt">Margin、Padding 與版面 — 為什麼欄位擠在一起</td><td class="st"><a class="golink" href="chapters/ch3-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-6"><td class="no">3-6</td><td class="tt">JavaScript 與網頁事件 — 網頁為什麼會「動」</td><td class="st"><a class="golink" href="chapters/ch3-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-7"><td class="no">3-7</td><td class="tt">表單驗證 — 擋在送出之前的檢查</td><td class="st"><a class="golink" href="chapters/ch3-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="3-8"><td class="no">3-8</td><td class="tt">Hidden Field 與 Tracking Script — 看不見的欄位與程式</td><td class="st"><a class="golink" href="chapters/ch3-8.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 第二階段 ============ -->
+  <div class="stage"><h2>第二階段：資料與系統整合</h2><small>單元 4–7</small></div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 4</span><h3>資料庫與資料模型</h3><span class="mprog" data-mod="m4"></span></div>
+    <table data-mod="m4">
+      <tr data-ch="4-1"><td class="no">4-1</td><td class="tt">資料表、欄位與紀錄 — 資料庫的基本單位</td><td class="st"><a class="golink" href="chapters/ch4-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-2"><td class="no">4-2</td><td class="tt">Data Type、Null 與 Empty String — 「沒有值」也有學問</td><td class="st"><a class="golink" href="chapters/ch4-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-3"><td class="no">4-3</td><td class="tt">Primary Key 與 Unique Key — 為什麼不能隨便選</td><td class="st"><a class="golink" href="chapters/ch4-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-4"><td class="no">4-4</td><td class="tt">Foreign Key 與資料關聯 — 資料表如何互相認識</td><td class="st"><a class="golink" href="chapters/ch4-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-5"><td class="no">4-5</td><td class="tt">One-to-One、One-to-Many、Many-to-Many</td><td class="st"><a class="golink" href="chapters/ch4-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-6"><td class="no">4-6</td><td class="tt">SQL 查詢的基本概念 — SELECT 與 WHERE</td><td class="st"><a class="golink" href="chapters/ch4-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-7"><td class="no">4-7</td><td class="tt">JOIN 的基本概念 — 把兩張表接起來</td><td class="st"><a class="golink" href="chapters/ch4-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="4-8"><td class="no">4-8</td><td class="tt">Index、View 與 Stored Procedure — 資料庫的三個常見名詞</td><td class="st"><a class="golink" href="chapters/ch4-8.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 5</span><h3>資料品質與資料治理</h3><span class="mprog" data-mod="m5"></span></div>
+    <table data-mod="m5">
+      <tr data-ch="5-1"><td class="no">5-1</td><td class="tt">Source of Truth 與 System of Record — 以誰為準</td><td class="st"><a class="golink" href="chapters/ch5-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-2"><td class="no">5-2</td><td class="tt">Master Data 與資料責任 — Data Owner 與 Data Steward</td><td class="st"><a class="golink" href="chapters/ch5-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-3"><td class="no">5-3</td><td class="tt">Duplicate 與 Matching — 重複資料是怎麼來的</td><td class="st"><a class="golink" href="chapters/ch5-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-4"><td class="no">5-4</td><td class="tt">資料清理與標準化 — Cleansing 與 Standardization</td><td class="st"><a class="golink" href="chapters/ch5-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-5"><td class="no">5-5</td><td class="tt">Field Mapping 與 Transformation — 欄位對欄位的翻譯</td><td class="st"><a class="golink" href="chapters/ch5-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-6"><td class="no">5-6</td><td class="tt">Sync Direction 與 Conflict Resolution — 雙向同步的衝突</td><td class="st"><a class="golink" href="chapters/ch5-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-7"><td class="no">5-7</td><td class="tt">Null 是否可以覆蓋原值 — Null Handling 與 Field Ownership</td><td class="st"><a class="golink" href="chapters/ch5-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-8"><td class="no">5-8</td><td class="tt">Consent、Retention 與資料分類</td><td class="st"><a class="golink" href="chapters/ch5-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="5-9"><td class="no">5-9</td><td class="tt">Data Lineage — 這筆資料是從哪來的</td><td class="st"><a class="golink" href="chapters/ch5-9.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 6</span><h3>API 與資料交換</h3><span class="mprog" data-mod="m6"></span></div>
+    <table data-mod="m6">
+      <tr data-ch="6-1"><td class="no">6-1</td><td class="tt">API 是什麼，以及它為什麼存在</td><td class="st"><a class="golink" href="chapters/ch6-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-2"><td class="no">6-2</td><td class="tt">REST 與 SOAP — 兩種常見的 API 風格</td><td class="st"><a class="golink" href="chapters/ch6-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-3"><td class="no">6-3</td><td class="tt">Endpoint、Request 與 Response — API 的門牌與信件</td><td class="st"><a class="golink" href="chapters/ch6-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-4"><td class="no">6-4</td><td class="tt">JSON 基礎 — 看懂大括號裡的資料</td><td class="st"><a class="golink" href="chapters/ch6-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-5"><td class="no">6-5</td><td class="tt">Header、Body 與 Parameter — 資料放在哪裡</td><td class="st"><a class="golink" href="chapters/ch6-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-6"><td class="no">6-6</td><td class="tt">API Authentication 與 Token — 系統之間怎麼認人</td><td class="st"><a class="golink" href="chapters/ch6-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-7"><td class="no">6-7</td><td class="tt">Status Code 與 Error Response — 從錯誤訊息找線索</td><td class="st"><a class="golink" href="chapters/ch6-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-8"><td class="no">6-8</td><td class="tt">Pagination、Rate Limit 與 Timeout — 大量資料的三道關卡</td><td class="st"><a class="golink" href="chapters/ch6-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-9"><td class="no">6-9</td><td class="tt">Retry 與 Idempotency — 重送會不會變兩筆</td><td class="st"><a class="golink" href="chapters/ch6-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-10"><td class="no">6-10</td><td class="tt">API、SFTP、Webhook 與 CSV 的選擇</td><td class="st"><a class="golink" href="chapters/ch6-10.html">開始閱讀</a></td></tr>
+      <tr data-ch="6-11"><td class="no">6-11</td><td class="tt">Middleware 與 Message Queue — 系統之間的轉運站</td><td class="st"><a class="golink" href="chapters/ch6-11.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 7</span><h3>Webhook、事件與自動化</h3><span class="mprog" data-mod="m7"></span></div>
+    <table data-mod="m7">
+      <tr data-ch="7-1"><td class="no">7-1</td><td class="tt">事件驅動架構 — 有事再通知，不用一直問</td><td class="st"><a class="golink" href="chapters/ch7-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-2"><td class="no">7-2</td><td class="tt">Webhook 與 Polling — 推播和輪詢有什麼不同</td><td class="st"><a class="golink" href="chapters/ch7-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-3"><td class="no">7-3</td><td class="tt">Producer、Consumer 與 Queue — 事件的生產線</td><td class="st"><a class="golink" href="chapters/ch7-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-4"><td class="no">7-4</td><td class="tt">Event ID 與 Timestamp — 事件的身分證與時間戳</td><td class="st"><a class="golink" href="chapters/ch7-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-5"><td class="no">7-5</td><td class="tt">Retry 與重複事件 — At-least-once 的代價</td><td class="st"><a class="golink" href="chapters/ch7-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-6"><td class="no">7-6</td><td class="tt">自動化循環 — 兩個系統互相觸發的無限迴圈</td><td class="st"><a class="golink" href="chapters/ch7-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-7"><td class="no">7-7</td><td class="tt">Race Condition — 誰先誰後很重要</td><td class="st"><a class="golink" href="chapters/ch7-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="7-8"><td class="no">7-8</td><td class="tt">Error Queue 與 Monitoring — 失敗的事件去了哪裡</td><td class="st"><a class="golink" href="chapters/ch7-8.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 第三階段 ============ -->
+  <div class="stage"><h2>第三階段：應用程式與身分安全</h2><small>單元 8–10</small></div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 8</span><h3>SDK、套件與應用程式</h3><span class="mprog" data-mod="m8"></span></div>
+    <table data-mod="m8">
+      <tr data-ch="8-1"><td class="no">8-1</td><td class="tt">API、SDK、Library 與 Package — 四個常被混用的名詞</td><td class="st"><a class="golink" href="chapters/ch8-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-2"><td class="no">8-2</td><td class="tt">Dependency 與 Framework — 程式也有供應鏈</td><td class="st"><a class="golink" href="chapters/ch8-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-3"><td class="no">8-3</td><td class="tt">SDK Initialization — 啟動成功只是第一步</td><td class="st"><a class="golink" href="chapters/ch8-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-4"><td class="no">8-4</td><td class="tt">Configuration 與 Environment — 同一套程式，不同的設定</td><td class="st"><a class="golink" href="chapters/ch8-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-5"><td class="no">8-5</td><td class="tt">Device Identifier 與 User Identifier — 認裝置還是認人</td><td class="st"><a class="golink" href="chapters/ch8-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-6"><td class="no">8-6</td><td class="tt">Event Tracking — 行為事件是怎麼被送出去的</td><td class="st"><a class="golink" href="chapters/ch8-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-7"><td class="no">8-7</td><td class="tt">Callback 與 Application Log — SDK 怎麼告訴你發生什麼事</td><td class="st"><a class="golink" href="chapters/ch8-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-8"><td class="no">8-8</td><td class="tt">Version Compatibility 與升級風險</td><td class="st"><a class="golink" href="chapters/ch8-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="8-9"><td class="no">8-9</td><td class="tt">如何分層排查 SDK 問題</td><td class="st"><a class="golink" href="chapters/ch8-9.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 9</span><h3>Authentication、Authorization 與 SSO</h3><span class="mprog" data-mod="m9"></span></div>
+    <table data-mod="m9">
+      <tr data-ch="9-1"><td class="no">9-1</td><td class="tt">Authentication 與 Authorization 的差異</td><td class="st"><a class="golink" href="chapters/ch9-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-2"><td class="no">9-2</td><td class="tt">Account、Identity、Credential 與 Session</td><td class="st"><a class="golink" href="chapters/ch9-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-3"><td class="no">9-3</td><td class="tt">SSO 與 Federation — 一次登入，處處通行</td><td class="st"><a class="golink" href="chapters/ch9-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-4"><td class="no">9-4</td><td class="tt">IdP 與 SP — 誰驗身分，誰提供服務</td><td class="st"><a class="golink" href="chapters/ch9-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-5"><td class="no">9-5</td><td class="tt">SAML 基礎 — 企業 SSO 最常見的協定</td><td class="st"><a class="golink" href="chapters/ch9-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-6"><td class="no">9-6</td><td class="tt">Assertion、Certificate 與 User Mapping</td><td class="st"><a class="golink" href="chapters/ch9-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-7"><td class="no">9-7</td><td class="tt">OAuth 基礎 — 授權而不交出密碼</td><td class="st"><a class="golink" href="chapters/ch9-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-8"><td class="no">9-8</td><td class="tt">OpenID Connect — 建立在 OAuth 上的身分層</td><td class="st"><a class="golink" href="chapters/ch9-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-9"><td class="no">9-9</td><td class="tt">MFA — 多一道驗證，多一層保障</td><td class="st"><a class="golink" href="chapters/ch9-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-10"><td class="no">9-10</td><td class="tt">應用程式如何知道 MFA 已完成 — AMR、ACR 與 AuthnContext</td><td class="st"><a class="golink" href="chapters/ch9-10.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-11"><td class="no">9-11</td><td class="tt">User Provisioning 與 JIT — 帳號是怎麼被建立的</td><td class="st"><a class="golink" href="chapters/ch9-11.html">開始閱讀</a></td></tr>
+      <tr data-ch="9-12"><td class="no">9-12</td><td class="tt">Certificate 到期與停權風險 — SSO 最常見的中斷原因</td><td class="st"><a class="golink" href="chapters/ch9-12.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 10</span><h3>網站追蹤、Cookie 與使用者同意</h3><span class="mprog" data-mod="m10"></span></div>
+    <table data-mod="m10">
+      <tr data-ch="10-1"><td class="no">10-1</td><td class="tt">Cookie 與 Browser Storage — 瀏覽器記住了什麼</td><td class="st"><a class="golink" href="chapters/ch10-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-2"><td class="no">10-2</td><td class="tt">First-party 與 Third-party Cookie</td><td class="st"><a class="golink" href="chapters/ch10-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-3"><td class="no">10-3</td><td class="tt">Tracking Pixel 與 Tracking Script — 兩種追蹤技術</td><td class="st"><a class="golink" href="chapters/ch10-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-4"><td class="no">10-4</td><td class="tt">Tag Manager — 統一管理追蹤程式的開關</td><td class="st"><a class="golink" href="chapters/ch10-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-5"><td class="no">10-5</td><td class="tt">Analytics 與 Marketing Tracking — 收資料的兩種目的</td><td class="st"><a class="golink" href="chapters/ch10-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-6"><td class="no">10-6</td><td class="tt">Consent Management Platform — 同意管理的守門員</td><td class="st"><a class="golink" href="chapters/ch10-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-7"><td class="no">10-7</td><td class="tt">Opt-in、Opt-out 與 Consent Category</td><td class="st"><a class="golink" href="chapters/ch10-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-8"><td class="no">10-8</td><td class="tt">Consent 前後的 Script Blocking</td><td class="st"><a class="golink" href="chapters/ch10-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-9"><td class="no">10-9</td><td class="tt">表單送出與行為追蹤 — 兩種資料的本質差異</td><td class="st"><a class="golink" href="chapters/ch10-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="10-10"><td class="no">10-10</td><td class="tt">撤回同意與 Data Minimization</td><td class="st"><a class="golink" href="chapters/ch10-10.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <!-- ============ 第四階段 ============ -->
+  <div class="stage"><h2>第四階段：系統交付與問題分析</h2><small>單元 11–13</small></div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 11</span><h3>環境、版本與部署</h3><span class="mprog" data-mod="m11"></span></div>
+    <table data-mod="m11">
+      <tr data-ch="11-1"><td class="no">11-1</td><td class="tt">不同系統環境的用途 — Dev、SIT、UAT、Staging、Production</td><td class="st"><a class="golink" href="chapters/ch11-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-2"><td class="no">11-2</td><td class="tt">Configuration、Code 與 Metadata — 改的是哪一種東西</td><td class="st"><a class="golink" href="chapters/ch11-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-3"><td class="no">11-3</td><td class="tt">Version Control 與 Git — 為什麼要記錄每一次修改</td><td class="st"><a class="golink" href="chapters/ch11-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-4"><td class="no">11-4</td><td class="tt">Repository、Commit 與 Branch</td><td class="st"><a class="golink" href="chapters/ch11-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-5"><td class="no">11-5</td><td class="tt">Merge、Pull Request 與 Conflict</td><td class="st"><a class="golink" href="chapters/ch11-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-6"><td class="no">11-6</td><td class="tt">CLI 的角色 — 沒有畫面的操作方式</td><td class="st"><a class="golink" href="chapters/ch11-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-7"><td class="no">11-7</td><td class="tt">Deployment 與 Release — 把變更送進正式環境</td><td class="st"><a class="golink" href="chapters/ch11-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-8"><td class="no">11-8</td><td class="tt">Rollback 與 Hotfix — 出事之後的兩條路</td><td class="st"><a class="golink" href="chapters/ch11-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-9"><td class="no">11-9</td><td class="tt">Environment Variable 與 Secret — 為什麼密碼不能寫進程式</td><td class="st"><a class="golink" href="chapters/ch11-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="11-10"><td class="no">11-10</td><td class="tt">部署前後檢核 — 顧問在上線日該確認什麼</td><td class="st"><a class="golink" href="chapters/ch11-10.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 12</span><h3>系統化除錯與 Root Cause Analysis</h3><span class="mprog" data-mod="m12"></span></div>
+    <table data-mod="m12">
+      <tr data-ch="12-1"><td class="no">12-1</td><td class="tt">錯誤訊息與 Log — Error、Warning、Info、Debug</td><td class="st"><a class="golink" href="chapters/ch12-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-2"><td class="no">12-2</td><td class="tt">Timestamp、Request ID 與 Correlation ID — 跨系統追蹤的線索</td><td class="st"><a class="golink" href="chapters/ch12-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-3"><td class="no">12-3</td><td class="tt">如何重現問題 — Reproduce 是除錯的起點</td><td class="st"><a class="golink" href="chapters/ch12-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-4"><td class="no">12-4</td><td class="tt">Expected Result 與 Actual Result — 說清楚「哪裡不對」</td><td class="st"><a class="golink" href="chapters/ch12-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-5"><td class="no">12-5</td><td class="tt">Scope 與 Frequency — 影響多大、多常發生</td><td class="st"><a class="golink" href="chapters/ch12-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-6"><td class="no">12-6</td><td class="tt">Root Cause 與 Workaround — 治本與治標</td><td class="st"><a class="golink" href="chapters/ch12-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-7"><td class="no">12-7</td><td class="tt">Permanent Fix 與 Regression Test — 修好之後還要驗什麼</td><td class="st"><a class="golink" href="chapters/ch12-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-8"><td class="no">12-8</td><td class="tt">分層除錯方法 — 從 User 到 Database 的檢查順序</td><td class="st"><a class="golink" href="chapters/ch12-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-9"><td class="no">12-9</td><td class="tt">測試環境正常、正式環境異常 — 環境差異排查</td><td class="st"><a class="golink" href="chapters/ch12-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="12-10"><td class="no">12-10</td><td class="tt">如何整理 Issue Description — 讓工程師與原廠一看就懂</td><td class="st"><a class="golink" href="chapters/ch12-10.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <div class="module">
+    <div class="module-head"><span class="mno">單元 13</span><h3>AI 協作與技術問題拆解</h3><span class="mprog" data-mod="m13"></span></div>
+    <table data-mod="m13">
+      <tr data-ch="13-1"><td class="no">13-1</td><td class="tt">AI 在顧問工作中的角色 — 能幫什麼、不能取代什麼</td><td class="st"><a class="golink" href="chapters/ch13-1.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-2"><td class="no">13-2</td><td class="tt">Context 與 Goal — 先講背景，再講目標</td><td class="st"><a class="golink" href="chapters/ch13-2.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-3"><td class="no">13-3</td><td class="tt">Input、Output 與 Constraint — 把問題規格化</td><td class="st"><a class="golink" href="chapters/ch13-3.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-4"><td class="no">13-4</td><td class="tt">如何提供系統背景 — 讓 AI 知道您的架構</td><td class="st"><a class="golink" href="chapters/ch13-4.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-5"><td class="no">13-5</td><td class="tt">如何提供 Sample Data — 給例子勝過給形容詞</td><td class="st"><a class="golink" href="chapters/ch13-5.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-6"><td class="no">13-6</td><td class="tt">如何提供 Error Log — 貼對訊息，事半功倍</td><td class="st"><a class="golink" href="chapters/ch13-6.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-7"><td class="no">13-7</td><td class="tt">如何要求 AI 列出假設 — 不要讓它直接猜答案</td><td class="st"><a class="golink" href="chapters/ch13-7.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-8"><td class="no">13-8</td><td class="tt">如何要求 AI 提供驗證步驟 — 檢查順序比答案重要</td><td class="st"><a class="golink" href="chapters/ch13-8.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-9"><td class="no">13-9</td><td class="tt">如何讓 AI 產生 Test Cases</td><td class="st"><a class="golink" href="chapters/ch13-9.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-10"><td class="no">13-10</td><td class="tt">如何驗證 AI 回答 — Verification 的習慣</td><td class="st"><a class="golink" href="chapters/ch13-10.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-11"><td class="no">13-11</td><td class="tt">敏感資料與資安 — 哪些東西不能貼給 AI</td><td class="st"><a class="golink" href="chapters/ch13-11.html">開始閱讀</a></td></tr>
+      <tr data-ch="13-12"><td class="no">13-12</td><td class="tt">從模糊問題到完整技術描述 — 通用提問結構總整理</td><td class="st"><a class="golink" href="chapters/ch13-12.html">開始閱讀</a></td></tr>
+    </table>
+  </div>
+
+  <footer>© 2026 企業系統與數位專案技術入門｜本網站內容僅供學習與教育用途</footer>
+</div>
+
+<script>
+(function(){
+  var KEY = 'eac-progress';
+  function load(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  var progress = load();
+  var rows = document.querySelectorAll('tr[data-ch]');
+  var total = rows.length, done = 0;
+
+  rows.forEach(function(row){
+    var ch = row.getAttribute('data-ch');
+    if(progress[ch]){
+      done++;
+      row.classList.add('done');
+      var st = row.querySelector('td.st');
+      var link = st.querySelector('a.golink');
+      var mark = document.createElement('span');
+      mark.className = 'donemark';
+      mark.textContent = '✓ 已完成';
+      if(link){
+        link.textContent = '再讀一次';
+        link.classList.add('again');
+        st.insertBefore(mark, link);
+      }else{
+        st.insertBefore(mark, st.firstChild);
+      }
+    }
+  });
+
+  document.getElementById('doneCount').textContent = done;
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('pbarFill').style.width = (total ? (done/total*100) : 0) + '%';
+
+  // 各單元完成數
+  document.querySelectorAll('.mprog').forEach(function(el){
+    var mod = el.getAttribute('data-mod');
+    var tbl = document.querySelector('table[data-mod="'+mod+'"]');
+    if(!tbl) return;
+    var mrows = tbl.querySelectorAll('tr[data-ch]');
+    var mdone = tbl.querySelectorAll('tr.done').length;
+    el.textContent = mdone + ' / ' + mrows.length + ' 章完成';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    if(confirm('確定要清除全部學習進度嗎？')){
+      localStorage.removeItem(KEY);
+      location.reload();
+    }
+  });
+
+  // ===== 左側快捷索引（由目錄自動產生） =====
+  var nav = document.getElementById('sidenav');
+  var snTitle = document.createElement('div');
+  snTitle.className = 'sn-title';
+  snTitle.textContent = '章節快捷索引';
+  nav.appendChild(snTitle);
+
+  document.querySelectorAll('.stage, .module').forEach(function(el){
+    if(el.classList.contains('stage')){
+      var h = document.createElement('h4');
+      h.textContent = el.querySelector('h2').textContent;
+      nav.appendChild(h);
+    }else{
+      var head = el.querySelector('.module-head');
+      var tbl = el.querySelector('table[data-mod]');
+      if(!el.id && tbl){ el.id = 'mod-' + tbl.getAttribute('data-mod'); }
+
+      var acc = document.createElement('details');
+      acc.className = 'sn-acc';
+      var sum = document.createElement('summary');
+      sum.textContent = head.querySelector('.mno').textContent + '｜' + head.querySelector('h3').textContent;
+      acc.appendChild(sum);
+
+      var body = document.createElement('div');
+      body.className = 'sn-body';
+      var go = document.createElement('a');
+      go.className = 'unitgo';
+      go.href = '#' + el.id;
+      go.textContent = '↪ 跳到目錄這個單元';
+      body.appendChild(go);
+
+      var list = document.createElement('div');
+      list.className = 'sn-ch';
+      el.querySelectorAll('tr[data-ch]').forEach(function(row){
+        var ch = row.getAttribute('data-ch');
+        if(!row.id){ row.id = 'row-' + ch; }
+        var c = document.createElement('a');
+        var golink = row.querySelector('a.golink');
+        c.href = golink ? golink.getAttribute('href') : ('#row-' + ch);
+        var title = row.querySelector('td.tt').textContent;
+        c.textContent = (row.classList.contains('done') ? '✓ ' : '') + ch + '　' + title;
+        c.title = ch + ' ' + title;
+        if(row.classList.contains('done')){ c.className = 'done'; }
+        list.appendChild(c);
+      });
+      body.appendChild(list);
+      acc.appendChild(body);
+      nav.appendChild(acc);
+    }
+  });
+})();
+</script>
+</body>
+</html>

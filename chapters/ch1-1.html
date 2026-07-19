@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1-1 前端、後端與資料庫｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5;
+    --surface:#FFFFFF;
+    --surface-warm:#F5F4ED;
+    --ink:#3D3929;
+    --ink-soft:#6E6B64;
+    --ink-faint:#9A968C;
+    --accent:#C96442;
+    --accent-deep:#A84F31;
+    --accent-soft:#F9EDE5;
+    --accent-faint:#FCF6F1;
+    --line:#E5E3D9;
+    --ok:#5E8C61;
+    --ok-soft:#EDF3EC;
+    --no:#B54A3F;
+    --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+
+  /* ===== Top bar ===== */
+  .topbar{
+    background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+
+  /* ===== Stage / card ===== */
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{
+    display:none; width:100%; max-width:760px;
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);
+  }
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{
+    display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;
+  }
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+
+  .note{
+    background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px;
+    padding:14px 20px; margin:16px 0;
+  }
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{
+    background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;
+  }
+  pre{
+    background:#2D2B24; color:#EDEBE3; border-radius:12px;
+    padding:16px 22px; overflow-x:auto; font-size:14px; line-height:1.8;
+    font-family:Consolas,"Cascadia Code",Menlo,monospace;
+  }
+
+  /* ===== Quiz ===== */
+  .opt{
+    display:block; width:100%; text-align:left; margin:10px 0;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:12px;
+    padding:12px 18px; font-size:15.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; line-height:1.8; transition:border-color .15s, background .15s;
+  }
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{
+    margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;
+  }
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+
+  /* ===== Bottom nav ===== */
+  /* 中間欄預留和卡片相同的寬度，左右按鈕因此維持等距 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+
+  .donebtn{
+    background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;
+  }
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; color:var(--accent); font-size:15px;}
+
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;}
+    .card h2{font-size:21px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 1 ・ 第 1 章｜前端、後端與資料庫</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <!-- 卡 1：開場 -->
+  <section class="card active">
+    <span class="tag">歡迎</span>
+    <h2>前端、後端與資料庫<br>系統的三層分工</h2>
+    <p class="lead">預估 30 分鐘 ・ 這是整門課的第一章，不需要任何基礎。</p>
+    <p>歡迎您來到第一章。今天想跟您聊一個很基本、但很好用的觀念：幾乎所有系統，都可以拆成「前端、後端、資料庫」三個部分來理解。</p>
+    <p>聽起來像工程師的話題？別擔心，我們會用點飲料、逛超商這種日常例子慢慢講。讀完這一章，您應該可以做到三件事：</p>
+    <ul>
+      <li>用自己的話說出前端、後端、資料庫各自在忙什麼。</li>
+      <li>聽到「系統壞了」的時候，心裡能浮現「可能壞在哪一層？」這個問題。</li>
+      <li>知道第一個該問客戶的問題是什麼。</li>
+    </ul>
+    <p>準備好了嗎？我們從一個真實會遇到的場景開始。</p>
+  </section>
+
+  <!-- 卡 2：情境 -->
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>客戶說：「表單壞掉了」</h2>
+    <p>假設您負責一個 CRM 導入專案（CRM 就是客戶關係管理系統，用來存放客戶資料的地方）。上線第二週，客戶窗口傳來一則訊息：</p>
+    <div class="bubble">「我們官網的報名表單壞掉了！客戶說有填資料、有按送出，但是我們在 CRM 裡找不到那筆資料。可以幫我們看一下嗎？」</div>
+    <p>請先停下來想十秒鐘：您會怎麼回覆？</p>
+    <p>很多人的直覺是「好，我請工程師看看」。這樣沒有錯，但其實這句話裡藏著好幾種完全不同的可能：</p>
+    <ul>
+      <li>也許是表單的<strong>畫面</strong>有問題，客戶根本沒有真的送出成功。</li>
+      <li>也許畫面沒問題，但資料在<strong>傳送的路上</strong>失敗了。</li>
+      <li>也許資料有送到，只是<strong>存的地方</strong>不對，或存的時候出錯了。</li>
+    </ul>
+    <p>這三種情況，要找的人不同、要查的東西也不同。如果能先分清楚，就能省下大量來回猜測的時間。而分清楚的工具，就是這一章要教您的「三層」思考。</p>
+  </section>
+
+  <!-- 卡 3：白話（前端） -->
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>先從一杯手搖飲說起</h2>
+    <p>想像您用手機 App 訂了一杯珍珠奶茶。整個過程其實經過了三個地方：</p>
+    <p><strong>第一個地方，是您手上的畫面。</strong>菜單、甜度冰塊的選項、那顆「送出訂單」的按鈕，這些都是做給您看、給您操作的。這就是<strong>前端（Frontend）</strong>。</p>
+    <p>換到餐廳的比喻也一樣：前端就像餐廳的用餐區和菜單，是客人看得到、摸得到的部分。</p>
+    <p>回到工作場景，這些都是前端：</p>
+    <ul>
+      <li>公司官網上的每一個網頁畫面。</li>
+      <li>報名表單的欄位和送出按鈕。</li>
+      <li>手機 App 裡您看到的所有畫面。</li>
+    </ul>
+    <div class="note">
+      <span class="nt">一個重要的小提醒</span>
+      前端負責「呈現」和「收集」。它把畫面呈現給使用者看，把使用者填的東西收集起來。但它通常<strong>不負責保存資料</strong>。畫面上看到的東西，跟真正存起來的資料，是兩回事。這句話之後會一直用到。
+    </div>
+  </section>
+
+  <!-- 卡 4：白話（後端＋資料庫） -->
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>看不到的廚房，和記帳的倉庫</h2>
+    <p>回到那杯珍珠奶茶。您按下「送出訂單」之後，發生了什麼事？</p>
+    <p><strong>第二個地方，是飲料店的櫃檯和吧台。</strong>店員收到訂單，先確認一下：這個品項今天有賣嗎？優惠券可以用嗎？確認沒問題才開始做飲料。這個「接收、檢查、處理」的角色，就是<strong>後端（Backend）</strong>。</p>
+    <p>後端像餐廳的廚房，客人看不到，但真正做事的是它。系統裡的規則，例如「同一個 Email 不能重複報名」「訂單超過十萬元要主管簽核」，都是後端在把關。</p>
+    <p><strong>第三個地方，是店裡的訂單紀錄和庫存。</strong>今天賣了幾杯、珍珠還剩多少，這些要記下來才不會忘。系統裡負責「長期保存資料」的，就是<strong>資料庫（Database）</strong>。</p>
+    <p>資料庫像倉庫加上帳本。前端的畫面關掉就沒了，後端處理完一筆就換下一筆，只有寫進資料庫的東西會留下來。</p>
+    <div class="note">
+      <span class="nt">比喻先放下，記住這句就好</span>
+      前端負責<strong>給人看、給人填</strong>；後端負責<strong>檢查和處理</strong>；資料庫負責<strong>記下來</strong>。三個角色，三種責任。
+    </div>
+  </section>
+
+  <!-- 卡 5：正式定義 -->
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>用比較正式的說法再講一次</h2>
+    <p>比喻幫助理解，但跟工程師溝通時，需要正式一點的講法。這三層的定義是：</p>
+    <table>
+      <tr><th style="width:24%;">名稱</th><th>它是什麼</th></tr>
+      <tr><td><strong>前端<br>Frontend</strong></td><td>在使用者的裝置（電腦、手機）上執行的部分，負責顯示畫面、接收使用者的操作。</td></tr>
+      <tr><td><strong>後端<br>Backend</strong></td><td>在伺服器上執行的程式。伺服器（Server）是放在遠端、負責提供服務的電腦。後端負責接收前端送來的請求、執行商業規則、決定資料怎麼處理。</td></tr>
+      <tr><td><strong>資料庫<br>Database</strong></td><td>有組織地長期保存資料的系統，讓程式可以存入、查詢、更新資料。</td></tr>
+    </table>
+    <p>「商業規則」這個詞第一次出現，補充一下：它指的是企業自己定的邏輯，像是折扣怎麼算、什麼情況要簽核、哪些欄位必填。這些規則的正式判斷，住在後端。</p>
+  </section>
+
+  <!-- 卡 6：資料走一圈 -->
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一筆資料的完整旅程</h2>
+    <p>三層是怎麼合作的？我們讓一筆報名資料從頭走一遍：</p>
+<pre>1. 訪客在網頁上填表單          ← 前端：收集輸入
+2. 按下「送出」，資料離開瀏覽器  ← 前端把資料交給後端
+3. 後端收到，檢查必填、格式      ← 後端：驗證與處理
+4. 檢查通過，寫進資料庫          ← 資料庫：保存
+5. 畫面顯示「報名成功」          ← 前端：呈現結果</pre>
+    <p>每一步都解釋一下：第 1、2 步發生在使用者的瀏覽器裡；第 3 步開始，工作交棒給遠端的後端；第 4 步資料才真正「落地」；第 5 步又回到使用者眼前。</p>
+    <p>這條路上的<strong>任何一步都可能出錯</strong>。可能卡在第 2 步（資料根本沒送出去），可能卡在第 3 步（格式檢查沒過），也可能卡在第 4 步（寫入失敗）。</p>
+    <p>所以「資料不見了」從來不是一個問題，而是好幾個可能問題的集合。排查的方法，就是沿著這條路，一步一步確認資料走到了哪裡。</p>
+  </section>
+
+  <!-- 卡 7：為什麼顧問需要知道 -->
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>顧問又不寫程式，知道這些做什麼？</h2>
+    <p>這是很合理的疑問。我用兩個工作上的場景回答您。</p>
+    <h3>場景一：估工時</h3>
+    <p>客戶說：「我想在報名表單上多加一個『推薦人』欄位，應該很快吧？」</p>
+    <p>懂三層的您會知道：畫面要加欄位（前端）、檢查邏輯要處理它（後端）、資料庫要有地方存它（資料庫），可能還要出現在報表上。所以這不是「加一個格子」而已。您不用會做，但您能理解工程師報的工時為什麼不是半小時，也能跟客戶解釋清楚。</p>
+    <h3>場景二：回報問題</h3>
+    <p>同樣是回報表單問題，比較這兩種說法：</p>
+    <div class="bubble">說法 A：「表單壞了，麻煩看一下。」</div>
+    <div class="bubble">說法 B：「使用者送出後畫面有顯示成功，但 CRM 裡查不到資料。看起來前端送出是正常的，麻煩先查後端有沒有收到。」</div>
+    <p>說法 B 直接幫工程師排除了一半的可能性。您花三分鐘先確認狀況，工程師就少花一小時亂槍打鳥。這就是顧問懂技術基礎的價值：不是取代工程師，而是讓合作變快。</p>
+  </section>
+
+  <!-- 卡 8：核心概念（上） -->
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>畫面上看到的，不等於存進去的</h2>
+    <p>這一章有四個核心概念，我們分兩張卡片講。先講前兩個。</p>
+    <h3>概念一：所有系統都在做同樣三件事</h3>
+    <p>不管它叫 CRM、ERP，還是行銷平台，拆開來看都是：<strong>接收資訊、處理資訊、保存資訊</strong>。名字再花俏的系統，也逃不出這三件事。這代表您學會一套思考方式，走到哪個系統都能用。</p>
+    <h3>概念二：畫面是畫面，資料是資料</h3>
+    <p>前端顯示的內容，可能是暫存的、算出來的，甚至是舊的。舉個例子：您在網頁上按了「儲存」，畫面跳出「儲存成功」，這時候瀏覽器當掉了。資料到底存進去了沒？答案是：<strong>不一定</strong>，要看當掉的那一刻，資料走到旅程的第幾步。</p>
+    <p>所以確認資料的真實狀態，最後都要回到資料庫查。畫面只能參考，資料庫才算數。</p>
+  </section>
+
+  <!-- 卡 9：核心概念（下） -->
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>規則住在後端，記憶住在資料庫</h2>
+    <h3>概念三：正式的規則檢查，在後端</h3>
+    <p>前端也可以做檢查，例如 Email 沒填就不給送出。但前端的檢查是「提醒性質」的，有辦法繞過去（例如用工具直接把資料丟給後端）。所以真正要守住的規則，後端一定要再檢查一次。</p>
+    <p>用飲料店比喻：菜單上寫「本店不供應熱飲」是前端的提醒；客人硬是點了，吧台拒絕做，才是後端的把關。菜單擋不住所有人，吧台可以。</p>
+    <h3>概念四：只有資料庫會記得</h3>
+    <p>前端的畫面，關掉就消失。後端處理完一筆請求，就去忙下一筆了。整個系統裡，只有資料庫負責長期記憶。</p>
+    <p>所以遇到「資料不見了」，最終極的問題永遠是同一句：<strong>「這筆資料，到底有沒有被寫進資料庫？」</strong>有寫進去，就是查詢或顯示的問題；沒寫進去,就要回頭找它在旅程的哪一步失蹤了。</p>
+  </section>
+
+  <!-- 卡 10：容易混淆 -->
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>三組容易搞混的概念</h2>
+    <p>這幾組概念，新手很容易混在一起。放慢一點看：</p>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>前端 vs 後端</td><td>前端跑在<strong>使用者的裝置</strong>上，負責畫面；後端跑在<strong>遠端的伺服器</strong>上，負責邏輯。看得到的是前端，做決定的是後端。</td></tr>
+      <tr><td>後端 vs 資料庫</td><td>後端是「處理資料的程式」，資料庫是「存放資料的地方」。後端會去讀寫資料庫，但它們是兩個東西，可能分別出問題。就像廚師和倉庫：廚師做錯菜，跟倉庫缺食材，是兩種不同的狀況。</td></tr>
+      <tr><td>畫面上的資料 vs 資料庫裡的資料</td><td>畫面可能顯示舊的或暫存的值。想知道資料真正的狀態，以資料庫為準。</td></tr>
+    </table>
+    <p>如果現在還是有點模糊，沒關係。後面的案例會再把這三組概念用一次，用著用著就熟了。</p>
+  </section>
+
+  <!-- 卡 11：中立案例 -->
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的報名表單</h2>
+    <p>來看一家虛構公司 Northstar Electronics（整門課都會用它當例子）。他們在官網放了活動報名表單，資料最後會存進 CRM。路徑長這樣：</p>
+<pre>訪客填表單（官網前端）
+→ 官網後端收到，檢查資料
+→ 官網後端把資料轉送給 CRM
+→ CRM 存進自己的資料庫
+→ 畫面顯示「報名成功」</pre>
+    <p>比剛才多了一步：官網後端還要把資料<strong>轉送</strong>給另一個系統（CRM）。企業環境常常是這樣，好幾個系統手牽手。</p>
+    <p>現在客戶回報「CRM 裡找不到報名資料」。可能出錯的地方有：</p>
+    <ul>
+      <li>前端就失敗了：訪客其實沒送出成功。</li>
+      <li>官網後端收到了，但轉送 CRM 時失敗。</li>
+      <li>CRM 收到了，但寫入資料庫時出錯。</li>
+    </ul>
+    <p>三種情況，客戶看到的都是同一句「找不到資料」。那第一步該查什麼？</p>
+    <div class="note">
+      <span class="nt">第一個好問題</span>
+      「使用者按下送出之後，畫面上出現了什麼？」如果有成功訊息，問題多半在後半段（轉送或寫入）；如果卡在畫面上，問題多半在前端。一個問題，範圍就砍半。
+    </div>
+  </section>
+
+  <!-- 卡 12：Salesforce 對照 -->
+  <section class="card">
+    <span class="tag">延伸對照（選讀）</span>
+    <h2>這些概念在 Salesforce 裡叫什麼</h2>
+    <p>如果您平常在用 Salesforce 或其他 SaaS 平台，可以對照一下。不熟這些產品的話，這張卡片跳過也完全沒關係。</p>
+    <table>
+      <tr><th style="width:34%;">通用概念</th><th>Salesforce 裡的樣子</th></tr>
+      <tr><td>前端</td><td>Lightning 頁面、Experience Cloud 網站、Web 表單</td></tr>
+      <tr><td>後端</td><td>Flow、Apex、Validation Rule 這些在平台上執行的邏輯</td></tr>
+      <tr><td>資料庫</td><td>Object（物件）與 Record（紀錄）</td></tr>
+    </table>
+    <p>SaaS 平台把三層都打包好了，您不需要自己架伺服器。但三層的分工邏輯一模一樣：Validation Rule 擋下一筆資料，就是「後端檢查沒過」；報表查不到紀錄，最後還是要問「這筆 Record 存在嗎」。換一個平台，思考方式不變。</p>
+  </section>
+
+  <!-- 卡 13：常見誤解 -->
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一：「畫面顯示成功，資料就一定存進去了」</h3>
+    <p>不一定。成功訊息有時只代表「前端把資料送出去了」，後面的處理和寫入還是可能失敗。遇到資料問題，別被成功訊息安撫，去資料庫確認。</p>
+    <h3>誤解二：「前端有擋，資料就不會有錯」</h3>
+    <p>前端的檢查可以被繞過。如果某條規則很重要（例如不能重複報名），一定要確認後端也有檢查。訪談需求時，這是很值得問工程師的一句：「這個檢查後端也有做嗎？」</p>
+    <h3>誤解三：「資料不見了，一定是資料庫的問題」</h3>
+    <p>更常見的情況是：資料根本沒走到資料庫。可能卡在前端沒送出，也可能在後端處理時就失敗了。先沿著旅程找到資料失蹤的位置，再判斷是誰的問題。</p>
+  </section>
+
+  <!-- 卡 14：先查什麼 -->
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「資料沒出現」的檢查順序</h2>
+    <p>把這一章的觀念收斂成一份順序清單。以後遇到「填了表單但資料沒出現」，照這個順序問：</p>
+    <ol>
+      <li><strong>什麼時候發生的？在哪個環境？</strong>是正式環境還是測試環境？只有這一筆，還是每一筆都這樣？</li>
+      <li><strong>使用者按下送出後，畫面上發生了什麼？</strong>成功訊息、錯誤訊息、還是卡住不動？請對方截圖。</li>
+      <li><strong>資料有沒有離開前端？</strong>這一步可以請技術人員確認（單元 2 會教您自己用瀏覽器工具看）。</li>
+      <li><strong>後端有沒有收到、處理成功？</strong>請工程師查後端的 Log。Log 就是系統的執行紀錄，像行車記錄器。</li>
+      <li><strong>資料庫裡到底有沒有這筆資料？</strong>這是最終的裁判。</li>
+    </ol>
+    <p>前兩步不需要任何技術工具，您今天就能開始用。光是做好前兩步，就已經比多數人的回報清楚很多了。</p>
+  </section>
+
+  <!-- 卡 15：重點整理 -->
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <p>這一章的內容，濃縮成四句：</p>
+    <ol>
+      <li>幾乎所有系統都分三層：前端給人看、後端做檢查和處理、資料庫負責記住。</li>
+      <li>畫面上看到的，不等於資料庫裡存的。成功訊息不保證資料落地。</li>
+      <li>重要的規則，後端一定要把關。前端的檢查只是提醒。</li>
+      <li>「系統壞了」不能直接行動。先分層、先問「畫面上發生了什麼」，範圍就會縮小。</li>
+    </ol>
+    <p>接下來是四題小小的檢核，大約五分鐘。放輕鬆作答，答錯的題目才是這一章送給您的禮物。</p>
+  </section>
+
+  <!-- 卡 16：Q1 -->
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 1/4</span>
+    <h2>使用者在網頁上看到的表單畫面和按鈕，屬於哪一層？</h2>
+    <button class="opt" data-val="A" type="button">A. 前端</button>
+    <button class="opt" data-val="B" type="button">B. 後端</button>
+    <button class="opt" data-val="C" type="button">C. 資料庫</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。畫面的呈現和使用者的操作介面是前端的工作。後端負責處理邏輯，資料庫負責保存，這兩層使用者都看不到。</div>
+    </div>
+  </section>
+
+  <!-- 卡 17：Q2 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題：表單送出後畫面顯示「成功」，代表資料一定已經寫進資料庫。</h2>
+    <button class="opt" data-val="A" type="button">是，成功就是成功</button>
+    <button class="opt" data-val="B" type="button">否，資料還是可能沒存進去</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。成功訊息有時只代表前端完成了送出，後端處理或資料庫寫入仍可能失敗。想確認資料的真實狀態，要到資料庫查。</div>
+    </div>
+  </section>
+
+  <!-- 卡 18：Q3 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 3/4</span>
+    <h2>「訂單金額超過十萬需要主管簽核」這條規則，正式的把關應該放在哪一層？</h2>
+    <button class="opt" data-val="A" type="button">A. 前端擋住就好，畫面跳提醒</button>
+    <button class="opt" data-val="B" type="button">B. 後端</button>
+    <button class="opt" data-val="C" type="button">C. 不用放在系統裡，靠人工留意</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。前端的檢查可以被繞過，重要規則的最後防線在後端。前端可以同時做提醒，那是為了讓使用者體驗更好。</div>
+    </div>
+  </section>
+
+  <!-- 卡 19：Q4 -->
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>客戶回報「客戶填了表單，但 CRM 裡找不到資料」。您的第一步是？</h2>
+    <button class="opt" data-val="A" type="button">A. 請工程師直接重寫表單程式</button>
+    <button class="opt" data-val="B" type="button">B. 先確認使用者送出後，畫面上發生了什麼</button>
+    <button class="opt" data-val="C" type="button">C. 直接進資料庫手動補一筆資料</button>
+    <button class="opt" data-val="D" type="button">D. 通知原廠說系統有 Bug</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict">
+      <div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。先確認前端的行為，可以立刻判斷問題偏前段還是後段，是成本最低、資訊量最大的第一步。其他選項都在還沒定位問題前就行動了。</div>
+    </div>
+  </section>
+
+  <!-- 卡 20：完成 -->
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了，第一章讀完了</h2>
+    <p id="scoreText"></p>
+    <p>最後留一個小小的思考題，不用寫下來，通勤時想一想就好：</p>
+    <div class="bubble">回想您手上的專案，客戶最近一次回報的問題，如果用「前端、後端、資料庫」來拆，它最可能發生在哪一層？</div>
+    <p>下一章我們會換一個角度切系統：誰在發問、誰在回答。這會是之後理解 API 的地基。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch1-2.html">前往下一章：1-2 Client、Server 與 Browser →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '1-1';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  // ===== 互動檢核 =====
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了，很棒！' : '沒關係，看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話，可以往回翻幾頁作答；直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果：' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好，可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次，特別是情境例子的部分。慢慢來，不急。'));
+    }
+  }
+
+  // ===== 標記完成 =====
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

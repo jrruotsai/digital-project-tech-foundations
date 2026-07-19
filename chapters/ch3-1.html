@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-1 HTML 如何構成網頁｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 3 ・ 第 1 章｜HTML 如何構成網頁 — Tag、Element 與 Attribute</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎來到單元 3</span>
+    <h2>HTML 如何構成網頁<br>Tag、Element 與 Attribute</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-1 再來。</p>
+    <p>單元 1、2 教了系統架構和網路運作,這個單元要正式進入前端的世界,從最基礎的 HTML 開始。您不需要學會寫程式,只需要看懂結構,能對照著檢查問題。</p>
+    <ul>
+      <li>說明 HTML 在網頁裡扮演的角色。</li>
+      <li>認得 Tag、Element、Attribute 這三個名詞。</li>
+      <li>看到一小段 HTML 原始碼時,能大致猜出這段畫面長什麼樣子。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「工程師說欄位少了一個 Attribute,我聽不懂」</h2>
+    <p>Northstar Electronics 的官網有個報名表單,顧問向工程師反映某個欄位沒有正確顯示提示文字,工程師回覆:</p>
+    <div class="bubble">「喔,那應該是那個 input 少了 placeholder 這個 Attribute,補上就好了。」</div>
+    <p>如果完全不懂 HTML,這句話聽起來像另一種語言。但只要理解 1-1 教過的「前端負責呈現畫面」,再加上這一章的三個基本名詞,您就能聽懂工程師在講的,其實是一件很具體、很小的事。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>樂高積木和積木說明書</h2>
+    <p>想像網頁是一座用樂高積木堆出來的建築。每一塊積木都有自己的形狀和用途:有的是牆壁、有的是窗戶、有的是屋頂。<strong>HTML(HyperText Markup Language,超文本標記語言)</strong>就是那份告訴瀏覽器「這裡放什麼形狀的積木」的說明書。</p>
+    <p>每一塊積木的種類,叫做 <strong>Tag(標籤)</strong>,例如 <code>&lt;p&gt;</code> 代表「這裡放一段文字」,<code>&lt;img&gt;</code> 代表「這裡放一張圖片」。而一塊已經放上去、實際存在畫面裡的積木,叫做 <strong>Element(元素)</strong>——Tag 是積木的「種類名稱」,Element 是「放進畫面裡的那一塊實體」。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Tag 是說明書上寫的種類,Element 是實際放進畫面的那一塊。日常對話裡兩者常被交替使用,但正式定義上,Element 才是真正出現在網頁裡的東西。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>積木上的貼紙說明</h2>
+    <p>有些積木上,還會貼一張小貼紙,寫著額外的說明:「這塊牆是紅色的」「這扇窗戶要開在這個位置」。這些額外的說明,就是 <strong>Attribute(屬性)</strong>——附加在 Element 上,提供更多細節的資訊。</p>
+    <p>回到開頭工程師說的那句話。<code>input</code> 是一種 Tag(用來放輸入欄位這塊積木);<code>placeholder</code> 就是貼在這塊積木上的一張貼紙,寫著「欄位裡要先淡淡顯示的提示文字是什麼」。少了這張貼紙,積木本身還在,只是少了提示文字這個細節,不影響欄位能不能正常輸入,但體驗上少了引導。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>三個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:22%;">名詞</th><th>定義</th><th style="width:26%;">例子</th></tr>
+      <tr><td><strong>Tag<br>標籤</strong></td><td>HTML 裡用尖括號包起來的標記,定義這是哪一種內容</td><td><code>&lt;p&gt;</code>、<code>&lt;img&gt;</code></td></tr>
+      <tr><td><strong>Element<br>元素</strong></td><td>由 Tag(通常是開始和結束一對)加上裡面內容,共同組成的一個實際單位</td><td><code>&lt;p&gt;您好&lt;/p&gt;</code></td></tr>
+      <tr><td><strong>Attribute<br>屬性</strong></td><td>寫在 Tag 裡面,提供額外設定或資訊的項目</td><td><code>placeholder="請輸入姓名"</code></td></tr>
+    </table>
+    <p>看一個實際範例:<code>&lt;input type="text" placeholder="請輸入姓名"&gt;</code>——<code>input</code> 是 Tag,整段合起來(含屬性)是一個 Element,<code>type</code> 和 <code>placeholder</code> 都是 Attribute,分別說明「這是文字輸入欄位」和「提示文字是什麼」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>一小段 HTML,對照畫面長什麼樣子</h2>
+    <p>看一段簡短的 HTML,逐行對照它在畫面上會呈現的樣子:</p>
+<pre>&lt;div&gt;
+  &lt;p&gt;歡迎報名 Northstar 年度活動&lt;/p&gt;
+  &lt;img src="banner.jpg" alt="活動banner"&gt;
+  &lt;a href="/register"&gt;立即報名&lt;/a&gt;
+&lt;/div&gt;</pre>
+    <p>逐行解釋:第一行 <code>div</code> 是一個容器,把裡面幾樣東西包在一起(3-2 會深入教);第二行 <code>p</code> 顯示一段文字;第三行 <code>img</code> 顯示一張圖片,<code>src</code> 這個 Attribute 告訴瀏覽器圖片檔案在哪裡;第四行 <code>a</code> 顯示一個可以點擊的連結,<code>href</code> 這個 Attribute 告訴瀏覽器點下去要跳去哪個網址。短短四行,就能對應出畫面上「一段文字、一張圖片、一個按鈕」的樣子。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:聽懂工程師描述畫面問題的用語</h3>
+    <p>工程師說「這個 Element 少了某個 Attribute」,您現在能理解這是在講一塊具體的畫面積木,缺了某個設定細節,而不是天書。這能讓您在會議中跟上討論,甚至幫忙補充觀察到的畫面現象。</p>
+    <h3>場景二:自己簡單檢查畫面元素</h3>
+    <p>結合 2-8 教過的開發者工具,您可以用「檢查」功能點選畫面上的某個區塊,直接看到它對應的 HTML 內容,確認是不是少了某個該有的文字或連結設定。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>HTML 只負責「結構」,不負責「好不好看」</h2>
+    <h3>概念一:HTML 描述的是「這裡有什麼」,不是「長什麼樣子」</h3>
+    <p>HTML 只負責定義畫面上有一段文字、一張圖片、一個按鈕,並不負責顏色、大小、間距這些外觀細節。外觀是 3-4 會教的 CSS 負責的工作,兩者是分工合作的關係。</p>
+    <h3>概念二:大多數 Tag 都有開始和結束一對</h3>
+    <p>像 <code>&lt;p&gt;...&lt;/p&gt;</code> 這樣成對出現,中間夾的內容就是這個 Element 的實際內容。少數 Tag(像 <code>&lt;img&gt;</code>)不需要成對的結束標籤,因為它本身不包裹任何文字內容。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>Attribute 是細節,但細節有時很重要</h2>
+    <h3>概念三:同一種 Tag,可以透過不同 Attribute 產生完全不同的行為</h3>
+    <p>同樣都是 <code>input</code> 這個 Tag,<code>type="text"</code> 是一般文字欄位,<code>type="checkbox"</code> 就變成核取方塊,行為完全不同。Attribute 雖然是「細節」,但很多時候決定了這個 Element 實際上是什麼。</p>
+    <h3>概念四:少了某個 Attribute,通常不會讓畫面「壞掉」,但可能少了某個功能</h3>
+    <p>就像開頭的例子,少了 <code>placeholder</code>,欄位還是能正常輸入,只是少了提示文字的體驗。這也是為什麼有些「小問題」看似無傷大雅,但顧問若能敏銳地發現,能提升產品的完整度。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Tag vs Element</td><td>Tag 是標記本身(例如 <code>&lt;p&gt;</code>);Element 是這個標記加上內容後,構成的完整單位(例如 <code>&lt;p&gt;您好&lt;/p&gt;</code>)。日常對話中常混用,不用太糾結,但正式書寫時可以留意這個差異。</td></tr>
+      <tr><td>HTML vs CSS</td><td>HTML 定義畫面上「有什麼內容」(結構);CSS(3-4 會教)決定這些內容「長什麼樣子」(外觀)。兩者分工不同,常常被新手搞混成同一件事。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的活動報名頁</h2>
+    <p>Northstar 的活動報名頁面,顧問發現圖片旁邊少了替代文字,截圖詢問工程師,對方查看後回覆:</p>
+<pre>原本的 HTML:&lt;img src="banner.jpg"&gt;
+建議修改:&lt;img src="banner.jpg" alt="2026年度活動主視覺"&gt;</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>顧問(發現問題的人)、工程師(修改 HTML 的人)。</li>
+      <li><strong>資料如何移動?</strong>這裡沒有涉及系統間的資料流動,單純是這個頁面的 HTML 結構本身需要補上一個 Attribute。</li>
+      <li><strong>這個 Attribute 負責什麼?</strong><code>alt</code> 屬性用來提供圖片的替代文字,在圖片載入失敗,或給視障使用者的輔助工具閱讀時,會顯示這段說明。</li>
+      <li><strong>哪裡可能出錯?</strong>如果沒有這個屬性,圖片一旦載入失敗,使用者只會看到一片空白,不知道原本該是什麼內容。</li>
+      <li><strong>第一個合理的檢查方向?</strong>用 2-8 教過的開發者工具「檢查」功能,直接點選這張圖片,查看它的 HTML 內容裡有沒有帶上完整的說明性屬性。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這個概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>HTML 結構</td><td>Salesforce Experience Cloud 或 Email 範本編輯器裡,切換到「原始碼」模式看到的內容,就是這裡教的 HTML</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「HTML 就是網頁設計,決定了畫面好不好看」</h3>
+    <p>HTML 只負責定義內容結構,外觀的美感是 CSS 的工作。把兩者混為一談,容易誤會問題出在錯誤的地方。</p>
+    <h3>誤解二:「Attribute 都是無關緊要的細節」</h3>
+    <p>有些 Attribute(像剛才提到的 <code>type</code>)會直接決定 Element 的行為,不是單純的裝飾性資訊,不能一概而論地忽略。</p>
+    <h3>誤解三:「只要看得懂英文字,就等於看得懂 HTML」</h3>
+    <p>HTML 有自己的結構規則(開始標籤、結束標籤、巢狀關係),不是單純認得單字就能完全理解,但作為顧問,理解基本結構的概念就已經足夠應付大多數溝通情境。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「畫面內容有問題」的檢查順序</h2>
+    <ol>
+      <li><strong>用開發者工具的「檢查」功能,點選出問題的畫面區塊。</strong>能直接看到對應的 HTML 內容。</li>
+      <li><strong>確認這是哪一種 Tag。</strong>是文字、圖片,還是連結?</li>
+      <li><strong>檢查這個 Element 有沒有帶上該有的 Attribute。</strong>例如圖片有沒有 <code>src</code>、連結有沒有 <code>href</code>。</li>
+      <li><strong>確認內容本身是否正確。</strong>是結構的問題,還是內容打錯了。</li>
+      <li><strong>把觀察到的具體 HTML 內容提供給工程師。</strong>比只描述「畫面怪怪的」更精準。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>HTML 是描述網頁結構的標記語言,決定畫面上「有什麼內容」。</li>
+      <li>Tag 是標記的種類,Element 是實際放進畫面的那個單位,Attribute 是附加在上面的細節說明。</li>
+      <li>HTML 只負責結構,不負責外觀,外觀是 CSS 的工作。</li>
+      <li>Attribute 雖是細節,但有時直接決定了 Element 的行為,不能一概當作無關緊要。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 1/4</span>
+    <h2>HTML 主要負責網頁的哪個部分?</h2>
+    <button class="opt" data-val="A" type="button">A. 內容結構(有什麼內容)</button>
+    <button class="opt" data-val="B" type="button">B. 外觀樣式(顏色、大小)</button>
+    <button class="opt" data-val="C" type="button">C. 資料庫的儲存方式</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。HTML 負責定義網頁的內容結構,外觀樣式是 CSS 負責的工作。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:Attribute 只是裝飾性資訊,不會影響 Element 的實際行為。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,有些 Attribute 會直接決定 Element 的行為</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。例如 <code>input</code> 的 <code>type</code> 屬性,會直接決定這是文字欄位還是核取方塊,並非只是裝飾用途。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 3/4</span>
+    <h2>在 <code>&lt;img src="banner.jpg" alt="活動圖片"&gt;</code> 這段 HTML 裡,<code>alt="活動圖片"</code> 是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 一個獨立的 Tag</button>
+    <button class="opt" data-val="B" type="button">B. 圖片檔案本身</button>
+    <button class="opt" data-val="C" type="button">C. 附加在 img 這個 Element 上的 Attribute</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。<code>alt</code> 是附加在 <code>img</code> 這個 Element 上的屬性,提供圖片的替代文字說明。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶反映某張圖片載入失敗時,畫面上什麼提示都沒有。最可能缺少的是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 這個 img 元素少了 alt 屬性,沒有替代文字可顯示</button>
+    <button class="opt" data-val="B" type="button">B. 整個資料庫都壞掉了</button>
+    <button class="opt" data-val="C" type="button">C. 使用者的網路完全斷線</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。少了 <code>alt</code> 屬性,圖片載入失敗時就不會顯示任何替代文字說明,這是很常見、也很容易被忽略的小細節。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,單元 3 的第一章讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">打開您公司的官網,用開發者工具的「檢查」功能,點選任何一個文字或圖片,看看它對應的 HTML 長什麼樣子。</div>
+    <p>下一章我們會認識更多常見的 HTML 元素,像 div、a、img 和 iframe,看看它們各自的角色。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch3-2.html">前往下一章：3-2 常見 HTML 元素 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '3-1';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

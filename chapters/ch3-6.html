@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-6 JavaScript 與網頁事件｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 3 ・ 第 6 章｜JavaScript 與網頁事件 — 網頁為什麼會「動」</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>JavaScript 與網頁事件<br>網頁為什麼會「動」</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 3-1、3-2 再來。</p>
+    <p>HTML 負責結構、CSS 負責外觀,那網頁的「互動」是誰負責的?點一個按鈕、畫面跳出提示、欄位即時檢查格式,這些「會動」的行為,都是這一章要教的 JavaScript 在幕後運作。</p>
+    <ul>
+      <li>說明 JavaScript 在網頁裡扮演的角色。</li>
+      <li>認得 DOM 和 Event 這兩個核心概念。</li>
+      <li>看到「按了按鈕沒反應」的問題時,知道可能要往哪個方向排查。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「按了按鈕,畫面完全沒反應」</h2>
+    <p>Northstar Electronics 的報名表單,客戶反映按下「送出」按鈕後畫面完全沒動靜,顧問請教工程師,對方查看瀏覽器的 Console(2-8 提過的另一個開發者工具頁籤)後回覆:</p>
+    <div class="bubble">「原始碼裡有個 JavaScript 錯誤,導致綁定在按鈕上的事件沒有正確執行,難怪按了沒反應。」</div>
+    <p>「事件沒有正確執行」是什麼意思?這一章要把 JavaScript 怎麼讓網頁「動起來」的原理講清楚,幫助您理解這類問題背後在發生什麼事。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>舞台佈景,和演員的即時反應</h2>
+    <p>如果說 HTML 是舞台上的佈景(有什麼道具、擺在哪裡),CSS 是佈景的美術設計(顏色、質感),那麼 <strong>JavaScript</strong> 就是舞台上的演員——負責對觀眾的反應做出即時回應。觀眾拍手(使用者點擊),演員立刻鞠躬(畫面產生變化);觀眾喊安可(使用者操作某個功能),演員立刻加演一段(觸發某個功能)。</p>
+    <p>沒有演員的舞台,佈景再漂亮也是靜態的,不會對觀眾的行為有任何反應。這正是 JavaScript 存在的意義:讓網頁具備「回應使用者操作」的能力。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      HTML 是結構、CSS 是外觀、JavaScript 是行為。三者分工合作,才構成一個完整、會動的網頁。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>觀眾的動作,和演員的劇本</h2>
+    <p>要讓演員知道「觀眾做了什麼動作」,舞台需要有一份「觀眾席地圖」,標明每個座位在哪裡——這就是 <strong>DOM(Document Object Model,文件物件模型)</strong>,它是瀏覽器把 HTML 結構,轉換成程式可以讀取、操作的一份地圖,讓 JavaScript 知道畫面上有哪些元素、它們在哪裡。</p>
+    <p>而「觀眾做了什麼動作」這件事本身,叫做 <strong>Event(事件)</strong>——像是 <code>Click(點擊)</code>、<code>Submit(送出)</code>、<code>Load(載入完成)</code>,都是常見的事件類型。JavaScript 的工作,就是「監聽」某個元素上會不會發生特定事件,一旦發生,就執行對應的劇本(程式碼)。</p>
+    <p>回到開頭按鈕沒反應的問題。工程師說「JavaScript 錯誤」導致「事件沒有正確執行」,意思是:原本應該綁定在按鈕上「監聽 Click 事件、送出表單」的這段劇本,因為程式碼裡有錯誤,整段劇本沒有被正確設置,所以演員(JavaScript)壓根不知道觀眾(使用者)做了點擊這個動作。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>幾個關鍵名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:20%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>JavaScript</strong></td><td>讓網頁具備互動與動態行為能力的程式語言</td></tr>
+      <tr><td><strong>DOM</strong></td><td>瀏覽器將 HTML 結構轉換成程式可讀取、操作的表示方式</td></tr>
+      <tr><td><strong>Event<br>事件</strong></td><td>使用者或瀏覽器觸發的特定動作,例如點擊、送出、頁面載入完成</td></tr>
+      <tr><td><strong>Variable<br>變數</strong></td><td>程式裡用來暫存資料的容器,例如暫存使用者輸入的內容</td></tr>
+      <tr><td><strong>Function<br>函式</strong></td><td>一段可以被重複呼叫執行的程式碼區塊,通常用來完成特定的任務</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>按下按鈕之後,發生了什麼事</h2>
+    <p>接續 3-3 教過的報名表單,加上 JavaScript 讓按鈕產生反應:</p>
+<pre>&lt;button id="submitBtn" type="button"&gt;送出&lt;/button&gt;
+
+&lt;script&gt;
+  // 監聽 submitBtn 這個元素的 Click 事件
+  document.getElementById("submitBtn").addEventListener("click", function() {
+    console.log("按鈕被點擊了");   // Console Log,2-8 提過的偵錯工具
+    // 這裡通常還會有更多程式碼,例如檢查欄位、送出表單
+  });
+&lt;/script&gt;</pre>
+    <p>逐行解釋:<code>getElementById</code> 這段程式,是透過 DOM 找到那個 id 為 <code>submitBtn</code> 的按鈕(呼應 3-3 教過的 id 屬性);<code>addEventListener("click", ...)</code> 是在說「監聽這個按鈕的 Click 事件」;一旦真的被點擊,大括號裡的程式碼就會被執行。如果這段程式碼本身有錯誤(例如拼字錯誤、邏輯錯誤),整段監聽可能無法正確設置,導致按鈕看起來「沒反應」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:理解「畫面沒反應」不一定是後端的問題</h3>
+    <p>1-1 教過三層架構,現在您知道前端裡還可以再細分:HTML 結構、CSS 外觀、JavaScript 行為。按鈕沒反應,可能連 Request 都還沒送出去(呼應 2-8 教過的判斷方式),問題卡在最前端的 JavaScript,根本還沒輪到後端出場。</p>
+    <h3>場景二:知道 Console 是排查 JavaScript 問題的重要工具</h3>
+    <p>開發者工具裡的 Console 頁籤,會顯示 JavaScript 執行時的錯誤訊息。下次遇到「畫面沒反應」的問題,可以請工程師先看一眼 Console 有沒有紅色的錯誤訊息,這往往是最快找到線索的地方。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>JavaScript 讓網頁從「靜態」變「互動」</h2>
+    <h3>概念一:沒有 JavaScript,網頁只能呈現固定內容,無法回應操作</h3>
+    <p>單純的 HTML 加 CSS,可以構成一個好看的頁面,但按鈕按下去不會有任何反應、欄位不會即時檢查格式。JavaScript 補上了「回應使用者行為」這個關鍵能力。</p>
+    <h3>概念二:DOM 是 JavaScript 操作畫面的地圖</h3>
+    <p>JavaScript 要找到某個元素、改變它的內容或樣式,都要透過 DOM 這份地圖來定位。理解這一點,能幫助您理解為什麼元素的 id、class(3-3、3-4 教過)對 JavaScript 來說也很重要——這些名稱正是用來在地圖上找到正確位置的依據。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>Event 是連結「使用者行為」和「程式反應」的橋樑</h2>
+    <h3>概念三:每種操作行為,對應著特定的 Event 類型</h3>
+    <p>點擊對應 Click、送出表單對應 Submit、頁面載入完成對應 Load,不同的操作行為,JavaScript 需要監聽不同的 Event 類型,才能正確做出反應。</p>
+    <h3>概念四:JavaScript 出錯,通常會讓「後續的劇本」整段失效</h3>
+    <p>如果程式碼裡某一段有錯誤,可能導致原本該執行的後續動作(例如綁定按鈕事件)完全沒有被設置。這也是為什麼一個小小的程式錯誤,有時會讓整個功能「看起來完全沒反應」,而不只是部分失常。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>HTML/CSS vs JavaScript</td><td>HTML 和 CSS 決定畫面「長什麼樣子」(結構與外觀),是相對靜態的描述;JavaScript 決定畫面「怎麼回應操作」,是動態的行為邏輯。三者分工不同,但常被籠統地混稱為「前端」。</td></tr>
+      <tr><td>Console(2-8 提過)vs Network(2-8 教過)</td><td>Console 顯示程式執行時的訊息或錯誤(通常跟 JavaScript 有關);Network 顯示 Request 和 Response 的往來紀錄(跟後端溝通有關)。排查「沒反應」問題時,兩個頁籤都值得看一眼,但關注的層面不同。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的按鈕失效事件</h2>
+    <p>追查報名表單送出按鈕沒反應的問題,工程師打開開發者工具的 Console,發現:</p>
+<pre>Console 顯示的錯誤訊息:
+Uncaught TypeError: Cannot read property 'value' of null
+
+追查原因:
+JavaScript 程式碼裡,嘗試透過某個 id 抓取一個欄位,
+但那個 id 在 HTML 裡打錯字了(呼應 3-1、3-3 教過的 id 屬性)</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>HTML 裡的表單欄位、JavaScript 裡嘗試操作這個欄位的程式碼。</li>
+      <li><strong>資料如何移動?</strong>這裡問題發生在使用者按下按鈕的那一刻,JavaScript 嘗試透過 DOM 找到某個欄位,卻因為 id 對不上而失敗。</li>
+      <li><strong>各部分負責什麼?</strong>JavaScript 依賴 HTML 裡設定的 id 屬性,來準確定位它要操作的元素,如果名稱對不上,就會找不到目標而出錯。</li>
+      <li><strong>哪裡可能出錯?</strong>HTML 裡的 id 拼字錯誤,或是 JavaScript 程式碼裡引用的 id 名稱寫錯,兩邊只要有一邊出錯,整個監聽和後續動作都會失敗。</li>
+      <li><strong>第一個合理的檢查方向?</strong>打開開發者工具的 Console 頁籤,查看有沒有紅色的錯誤訊息,這通常能直接指出問題發生在哪一行程式碼、涉及哪個元素。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這個概念在企業應用裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>JavaScript 互動邏輯</td><td>Salesforce Lightning Web Components(LWC)背後,同樣是用 JavaScript 處理畫面上的互動邏輯與事件監聽</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「按鈕沒反應,一定是後端沒收到請求」</h3>
+    <p>問題也可能發生在更早的階段——JavaScript 根本沒有正確執行,連 Request 都還沒被送出去,這時候後端完全沒有機會出場。</p>
+    <h3>誤解二:「JavaScript 只是讓網頁有一些花俏的動畫效果」</h3>
+    <p>JavaScript 負責的範圍遠不只是視覺特效,包括表單驗證(3-7 會教)、追蹤使用者行為(3-8 會教)、呼叫其他系統的 API(單元 6 會教),都仰賴 JavaScript 運作。</p>
+    <h3>誤解三:「一個小小的程式錯誤,只會影響那一小段功能」</h3>
+    <p>有時候一個錯誤會導致整段程式碼中斷執行,連帶讓後面原本該設置的其他功能(例如其他按鈕的事件監聽)也一併失效,影響範圍可能比想像中大。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「按鈕或功能沒反應」的檢查順序</h2>
+    <ol>
+      <li><strong>打開開發者工具的 Console 頁籤。</strong>看有沒有紅色的錯誤訊息。</li>
+      <li><strong>打開 Network 頁籤,確認有沒有發出對應的 Request。</strong>如果完全沒有,代表問題卡在更早的 JavaScript 執行階段(呼應 2-8 教過的判斷方式)。</li>
+      <li><strong>確認相關的 HTML 元素 id 或 class,是否跟 JavaScript 程式碼裡引用的名稱一致。</strong></li>
+      <li><strong>確認這個功能是最近才出問題,還是一直都有問題。</strong>幫助判斷是不是最近的改動造成的。</li>
+      <li><strong>把 Console 裡的錯誤訊息完整提供給工程師。</strong>這通常是最直接、最有價值的線索。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>JavaScript 讓網頁具備回應使用者操作的能力,是前端裡負責「行為」的部分。</li>
+      <li>DOM 是 JavaScript 用來定位和操作畫面元素的地圖,Event 是連結使用者行為與程式反應的橋樑。</li>
+      <li>「按鈕沒反應」不一定是後端問題,可能是 JavaScript 執行時發生錯誤,連請求都還沒送出。</li>
+      <li>Console 頁籤是排查 JavaScript 問題最重要的工具,紅色錯誤訊息通常能直接指出問題所在。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 1/4</span>
+    <h2>在網頁的分工中,負責讓畫面回應使用者操作(例如點擊按鈕產生反應)的是誰?</h2>
+    <button class="opt" data-val="A" type="button">A. HTML</button>
+    <button class="opt" data-val="B" type="button">B. CSS</button>
+    <button class="opt" data-val="C" type="button">C. JavaScript</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。JavaScript 負責讓網頁具備互動與動態行為能力,回應使用者的操作。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:按鈕按下去沒有任何反應,一定代表後端沒有收到請求。</h2>
+    <button class="opt" data-val="A" type="button">是</button>
+    <button class="opt" data-val="B" type="button">否,也可能是 JavaScript 執行出錯,連請求都還沒送出</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。問題可能發生在更早的 JavaScript 執行階段,導致連 Request 都還沒被送出去,後端完全沒有機會參與。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>開發者工具裡,哪個頁籤最適合用來查看 JavaScript 執行時的錯誤訊息?</h2>
+    <button class="opt" data-val="A" type="button">A. Console</button>
+    <button class="opt" data-val="B" type="button">B. Network</button>
+    <button class="opt" data-val="C" type="button">C. Elements</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。Console 頁籤會顯示 JavaScript 執行時的訊息或錯誤,是排查這類問題最重要的工具。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶反映按下送出按鈕後畫面完全沒反應。第一個合理的檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 打開開發者工具的 Console,看有沒有錯誤訊息</button>
+    <button class="opt" data-val="B" type="button">B. 直接懷疑資料庫故障</button>
+    <button class="opt" data-val="C" type="button">C. 請客戶換一台印表機</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。先查看 Console 是否有 JavaScript 錯誤訊息,是排查「沒反應」問題成本最低、也最直接的第一步。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">用開發者工具打開 Console 頁籤,瀏覽您常用的一個網站,看看有沒有出現任何錯誤或警告訊息。</div>
+    <p>下一章我們會教表單驗證——JavaScript 如何在資料送出之前,先幫忙做第一道檢查。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch3-7.html">前往下一章：3-7 表單驗證 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '3-6';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

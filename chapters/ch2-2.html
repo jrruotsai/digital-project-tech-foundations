@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2-2 HTTP Request 與 Response｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 2 ・ 第 2 章｜HTTP Request 與 Response — 一問一答的規則</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>HTTP Request 與 Response<br>一問一答的規則</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 1-2 和 2-1 再來。</p>
+    <p>1-2 教過「Client 發問、Server 回答」,2-1 教過「網址怎麼找到 Server」。這一章要打開那個「問」和「答」的信封,看看裡面實際裝了什麼。這是之後理解 API(單元 6)的必要基礎。</p>
+    <ul>
+      <li>說明 HTTP Request 和 Response 各自包含哪些部分。</li>
+      <li>認得 Header、Body、Query Parameter 這三個常見詞。</li>
+      <li>看到工程師提到「這個 Request 帶了什麼」時,知道他在問什麼。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「工程師說要看 Request 內容,我完全不知道那是什麼」</h2>
+    <p>Northstar Electronics 的顧問在協助排查一個表單問題,工程師回了一句:</p>
+    <div class="bubble">「我需要看一下那個 Request 的 Header 和 Body,才能確認問題出在哪。」</div>
+    <p>如果您完全不知道 Header、Body 是什麼,這句話聽起來就像外星語言。但只要理解「一次 HTTP 溝通,就像寄一封結構化的信」,這些詞馬上會變得具體。這一章就是要把這封信拆開來看。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>一封信的信封和信紙</h2>
+    <p>想像您寄一封正式信件,信封上會寫收件地址、寄件地址;信紙裡才是您真正想說的內容。<strong>HTTP(HyperText Transfer Protocol,超文本傳輸協定)</strong>就是規定「這封信該怎麼寫、怎麼寄」的一套規則,是 2-1 提過那串網址前面 <code>https://</code> 的正式名稱由來。</p>
+    <p>Client 發出的那封信,叫 <strong>Request(請求)</strong>——「我要做什麼、要什麼資料」。Server 回的那封信,叫 <strong>Response(回應)</strong>——「這是處理結果、這是您要的內容」。這正是 1-2 教過的一問一答,只是這裡要看得更細。</p>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Request 是「我要什麼」,Response 是「這是結果」。兩者結構很像,都分成「信封上的資訊」和「信紙裡的內容」兩部分。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>信封上的備註,和信紙裡的正文</h2>
+    <p>一封 Request(或 Response)信件,拆開來看有兩個部分:</p>
+    <p><strong>Header(標頭)</strong>就像信封上額外寫的備註:這封信是什麼格式(純文字還是有附件)、寄件人是誰、需不需要對方先確認身分。它是溝通這次往來的「附加資訊」,不是主要內容本身。</p>
+    <p><strong>Body(本文)</strong>就是信紙裡真正的內容:如果是 Request,可能是您在表單裡填的資料;如果是 Response,可能是 Server 回傳給您的實際資訊。</p>
+    <p>還有一個常見的詞:<strong>Query Parameter(查詢參數)</strong>,它是寫在網址後面、用問號開頭的一小段資訊,像是 <code>?keyword=手機</code>,常用來告訴 Server「我要篩選哪些條件」,可以想成是寫在信封正面的「特別指定條件」,比 Header 更顯眼,也更常被使用者直接看到(因為它就出現在網址列上)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>幾個關鍵名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:22%;">名詞</th><th>定義</th></tr>
+      <tr><td><strong>HTTP</strong></td><td>規範 Client 與 Server 之間如何請求與回應的通訊協定</td></tr>
+      <tr><td><strong>Request<br>請求</strong></td><td>Client 發送給 Server 的訊息,說明想做什麼、想要什麼資料</td></tr>
+      <tr><td><strong>Response<br>回應</strong></td><td>Server 處理完 Request 後,回傳給 Client 的結果</td></tr>
+      <tr><td><strong>Header<br>標頭</strong></td><td>Request 或 Response 中,描述這次溝通額外資訊的部分(如格式、身分驗證資訊)</td></tr>
+      <tr><td><strong>Body<br>本文</strong></td><td>Request 或 Response 中,真正承載的資料內容</td></tr>
+      <tr><td><strong>Query Parameter<br>查詢參數</strong></td><td>附加在網址後面、用來傳遞篩選或設定條件的資訊</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>填一次表單,一次 Request/Response 的完整內容</h2>
+    <p>接續 1-1 的報名表單案例,拆開這次 Request 和 Response 裡實際裝了什麼:</p>
+<pre>使用者送出的 Request(簡化示意):
+  方法:POST(2-3 會教這是什麼意思)
+  網址:northstar-electronics.com/register
+  Header:內容格式是「表單資料」
+  Body:{ "name": "王小明", "email": "wang@example.com" }
+
+Server 回傳的 Response(簡化示意):
+  狀態:200(2-4 會教,代表成功)
+  Header:內容格式是「JSON 資料」
+  Body:{ "status": "success", "message": "報名成功" }</pre>
+    <p>使用者填的姓名、Email,放在 Request 的 Body 裡;Server 說「有沒有成功」,放在 Response 的 Body 裡。Header 則像是兩邊溝通時,附加說明「這包資料是什麼格式」的小紙條。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:聽懂工程師在查什麼</h3>
+    <p>工程師說「Request 有沒有帶正確的 Header」,通常在確認身分驗證資訊或資料格式有沒有設定對;說「Body 裡的資料對不對」,則是在確認實際送出的內容是否正確。聽懂這些詞,能讓您跟得上排查問題的討論,甚至幫忙補充資訊。</p>
+    <h3>場景二:描述問題時更精準</h3>
+    <p>與其說「表單怪怪的」,不如說「送出表單時,Request 的 Body 裡好像缺了 Email 欄位」。這種描述能讓工程師直接鎖定方向,不用再花時間問您細節。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>Request 和 Response 結構是對稱的</h2>
+    <h3>概念一:兩邊都有 Header 和 Body</h3>
+    <p>不管是 Client 發出的 Request,還是 Server 回傳的 Response,都遵循同一套結構:Header 放附加資訊,Body 放實際內容。理解了一邊,另一邊就很容易類推。</p>
+    <h3>概念二:Header 是「關於這次溝通」的資訊,不是「內容本身」</h3>
+    <p>常見的 Header 資訊包括:這次傳的是什麼格式的資料、有沒有附上身分驗證的憑證。它們幫助 Server(或 Client)正確解讀 Body 裡的內容,但本身不是使用者真正關心的那份資料。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>Query Parameter 是最容易被使用者看見的部分</h2>
+    <h3>概念三:網址列裡的問號後面,就是 Query Parameter</h3>
+    <p>下次搜尋網站時,留意一下網址列——後面那段 <code>?keyword=xxx</code> 就是 Query Parameter,在向 Server 傳達「我要用這個關鍵字搜尋」的條件。它跟 Body 一樣是傳遞資料,只是位置和用途略有不同,通常用在篩選、排序這類「附加條件」。</p>
+    <h3>概念四:三個概念合在一起,才是一次完整的溝通</h3>
+    <p>Header 說明格式與身分、Query Parameter 傳遞篩選條件、Body 承載主要資料,三者各自負責不同角色,合在一起才構成一次完整的 Request 或 Response。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:28%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Header vs Body</td><td>Header 是「關於這次溝通的說明」,例如格式、身分驗證;Body 是「真正想傳遞的內容」,例如表單填的資料。一個是信封上的備註,一個是信紙裡的正文。</td></tr>
+      <tr><td>Body vs Query Parameter</td><td>兩者都能傳遞資料,但 Body 通常放在信件內容裡,不會直接顯示在網址上;Query Parameter 附加在網址後面,使用者在網址列就能看到,較不適合放敏感資料。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的產品搜尋功能</h2>
+    <p>Northstar 官網有個產品搜尋框,使用者輸入「手機」後按下搜尋:</p>
+<pre>Request:
+  網址:northstar-electronics.com/search?keyword=手機
+  Header:說明這次溝通的格式
+  (這裡沒有 Body,因為搜尋條件已經寫在網址的 Query Parameter 裡)
+
+Response:
+  狀態:200
+  Body:{ "results": [ {"name":"手機A"}, {"name":"手機B"} ] }</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>使用者的 Browser(Client)、Northstar 的官網後端(Server)。</li>
+      <li><strong>資料如何移動?</strong>搜尋關鍵字透過 Query Parameter 傳給 Server,結果透過 Response 的 Body 傳回。</li>
+      <li><strong>各部分負責什麼?</strong>Query Parameter 傳遞搜尋條件,Body 傳回搜尋結果清單。</li>
+      <li><strong>哪裡可能出錯?</strong>如果 Query Parameter 裡的關鍵字沒有正確帶入網址(例如打錯字或編碼問題),Server 可能收到錯誤或空白的搜尋條件,導致搜不到預期結果。</li>
+      <li><strong>第一個合理的檢查方向?</strong>先看網址列的 Query Parameter 是否正確帶上了使用者輸入的關鍵字,再往 Server 端的搜尋邏輯排查。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 API 串接裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>常見情境</th></tr>
+      <tr><td>Header</td><td>呼叫 Salesforce REST API 時,Header 裡通常要帶上身分驗證用的 Token(單元 6 會教)</td></tr>
+      <tr><td>Query Parameter</td><td>Salesforce SOQL 查詢常透過網址的 Query Parameter 傳遞查詢條件</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「Request 只有 Body,沒有其他東西」</h3>
+    <p>很多 Request 其實不帶 Body(例如剛才的搜尋案例),條件全靠 Query Parameter 傳遞。是否需要 Body,要看這次溝通的性質。</p>
+    <h3>誤解二:「Header 不重要,可以忽略」</h3>
+    <p>Header 裡常常帶著身分驗證資訊,如果 Header 設定錯誤,即使 Body 的內容完全正確,Server 也可能因為認不出身分而拒絕這次請求。</p>
+    <h3>誤解三:「網址列上看不到資料,就代表資料很安全」</h3>
+    <p>Body 雖然不會顯示在網址列,但透過瀏覽器工具還是能被看到,不能單靠「藏在 Body 裡」當作安全機制,敏感資料的保護要靠單元 9 會教的身分驗證與加密機制。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「表單送出後資料怪怪的」的檢查順序</h2>
+    <ol>
+      <li><strong>確認這次操作是否需要傳遞資料。</strong>是透過網址的 Query Parameter,還是透過 Body?</li>
+      <li><strong>確認 Header 是否正確。</strong>特別是身分驗證相關的資訊有沒有正確帶上。</li>
+      <li><strong>確認 Body 裡的資料內容是否完整。</strong>可以請工程師用瀏覽器工具(2-8 會教)實際查看送出的內容。</li>
+      <li><strong>確認 Response 回傳了什麼。</strong>Server 說成功,還是回傳了錯誤訊息?</li>
+      <li><strong>把 Request 和 Response 的內容都提供給工程師。</strong>這比只描述「表單怪怪的」有效率得多。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>HTTP 是規範 Client 與 Server 之間如何請求與回應的協定,Request 是問句,Response 是答句。</li>
+      <li>Request 和 Response 都有 Header(附加資訊)和 Body(實際內容)兩個部分。</li>
+      <li>Query Parameter 附加在網址後面,常用來傳遞篩選或設定條件,使用者在網址列就能看到。</li>
+      <li>描述問題時,分清楚是 Header、Body 還是 Query Parameter 的問題,能讓工程師更快定位方向。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 1/4</span>
+    <h2>使用者在表單裡填寫的實際資料,通常會放在 Request 的哪個部分?</h2>
+    <button class="opt" data-val="A" type="button">A. Header</button>
+    <button class="opt" data-val="B" type="button">B. 網址的 Domain</button>
+    <button class="opt" data-val="C" type="button">C. Body</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。Body 是 Request 或 Response 真正承載的資料內容,使用者填寫的表單資料通常放在這裡。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:所有的 Request 一定都要帶 Body。</h2>
+    <button class="opt" data-val="A" type="button">是,每次都一定要有</button>
+    <button class="opt" data-val="B" type="button">否,有些 Request 只靠 Query Parameter 傳遞條件,不需要 Body</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。像搜尋這類操作,常常只用網址上的 Query Parameter 傳遞條件,不需要額外帶 Body。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>下列哪一個最可能出現在 Header 裡?</h2>
+    <button class="opt" data-val="A" type="button">A. 身分驗證用的憑證資訊</button>
+    <button class="opt" data-val="B" type="button">B. 使用者填寫的姓名</button>
+    <button class="opt" data-val="C" type="button">C. 表單的送出結果訊息</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。Header 存放的是這次溝通的附加資訊,身分驗證憑證是典型例子;使用者填寫的資料和結果訊息通常放在 Body 裡。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客戶回報「搜尋功能找不到正確結果」。第一個合理的檢查方向是?</h2>
+    <button class="opt" data-val="A" type="button">A. 直接重寫整個搜尋功能</button>
+    <button class="opt" data-val="B" type="button">B. 確認網址上的 Query Parameter 是否正確帶入了搜尋關鍵字</button>
+    <button class="opt" data-val="C" type="button">C. 請客戶換一台電腦再試試</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。搜尋條件通常透過 Query Parameter 傳遞,先確認這段資訊有沒有正確帶入,是成本最低的第一步。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上的專案裡,有沒有一次排查問題時,工程師問起 Request 或 Response 的內容,而您當時聽不太懂的經驗?現在回頭看,那次他其實是想確認什麼?</div>
+    <p>下一章我們會教 HTTP Method——GET 和 POST 這些詞,到底代表 Request 想做什麼樣的事。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch2-3.html">前往下一章：2-3 HTTP Method →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '2-2';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>

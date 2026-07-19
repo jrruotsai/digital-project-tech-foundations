@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-3 Primary Key 與 Unique Key｜企業應用顧問技術基礎培訓</title>
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
+    --ink:#3D3929; --ink-soft:#6E6B64; --ink-faint:#9A968C;
+    --accent:#C96442; --accent-deep:#A84F31; --accent-soft:#F9EDE5; --accent-faint:#FCF6F1;
+    --line:#E5E3D9; --ok:#5E8C61; --ok-soft:#EDF3EC; --no:#B54A3F; --no-soft:#F9ECEA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Segoe UI",sans-serif;
+    font-size:16.5px; line-height:2; min-height:100vh; display:flex; flex-direction:column;}
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Noto Serif TC",serif; font-weight:600;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line);
+    padding:12px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .topbar a.home{color:var(--accent); text-decoration:none; font-size:14px; white-space:nowrap;}
+  .topbar a.home:hover{text-decoration:underline;}
+  .topbar .ttl{font-size:14.5px; color:var(--ink-soft); flex:1; min-width:200px;}
+  .topbar .pos{font-size:13px; color:var(--ink-faint); white-space:nowrap;}
+  .stage{flex:1; display:flex; justify-content:center; padding:28px 18px 8px;}
+  .card{display:none; width:100%; max-width:760px; background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:34px 42px 38px; box-shadow:0 2px 10px rgba(61,57,41,.06);}
+  .card.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .card .tag{display:inline-block; background:var(--accent-soft); color:var(--accent-deep);
+    border-radius:999px; padding:2px 16px; font-size:13.5px; font-weight:700; margin-bottom:14px;}
+  .card h2{font-size:24px; margin:0 0 16px; line-height:1.5;}
+  .card h3{font-size:18px; margin:22px 0 8px;}
+  .card p{margin:12px 0;}
+  .card ul,.card ol{margin:12px 0; padding-left:26px;}
+  .card li{margin:8px 0;}
+  .lead{color:var(--ink-soft);}
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:15px;}
+  th{background:var(--surface-warm); color:var(--ink); text-align:left; padding:9px 14px;
+     border:1px solid var(--line); font-weight:700;}
+  td{border:1px solid var(--line); padding:9px 14px; vertical-align:top;}
+  .note{background:var(--accent-faint); border:1px solid #F0DFD3; border-radius:12px; padding:14px 20px; margin:16px 0;}
+  .note .nt{color:var(--accent-deep); font-weight:700; font-size:14px; display:block; margin-bottom:4px;}
+  .bubble{background:var(--surface-warm); border-radius:14px; padding:14px 20px; margin:16px 0;
+    border:1px solid var(--line); font-size:15.5px;}
+  pre{background:#2D2B24; color:#EDEBE3; border-radius:12px; padding:16px 22px; overflow-x:auto;
+    font-size:14px; line-height:1.8; font-family:Consolas,"Cascadia Code",Menlo,monospace;}
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; background:var(--surface);
+    border:1.5px solid var(--line); border-radius:12px; padding:12px 18px; font-size:15.5px;
+    font-family:inherit; color:var(--ink); cursor:pointer; line-height:1.8;
+    transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.picked{border-color:var(--accent); background:var(--accent-faint);}
+  .opt.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .opt.wrong{border-color:var(--no); background:var(--no-soft);}
+  .opt:disabled{cursor:default; opacity:.92;}
+  .checkbtn{margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 30px; font-size:15.5px; font-family:inherit; cursor:pointer;}
+  .checkbtn:hover{background:var(--accent-deep);}
+  .checkbtn:disabled{background:var(--line); color:var(--ink-faint); cursor:default;}
+  .verdict{display:none; margin-top:16px; border-radius:12px; padding:14px 20px; font-size:15.5px;}
+  .verdict.show{display:block; animation:fadein .25s ease;}
+  .verdict.good{background:var(--ok-soft); border:1px solid #CADFC9;}
+  .verdict.bad{background:var(--no-soft); border:1px solid #EBCFCB;}
+  .verdict .v-title{font-weight:700; margin-bottom:4px;}
+  .verdict.good .v-title{color:var(--ok);}
+  .verdict.bad .v-title{color:var(--no);}
+  /* 導覽固定在視窗兩側，內容再長也能直接換頁 */
+  .navbar{position:fixed; inset:0; z-index:30;
+    display:grid; grid-template-columns:max-content minmax(0,760px) max-content;
+    justify-content:center; align-content:center; align-items:center; gap:18px;
+    padding:0 24px; pointer-events:none;}
+  .navbtn{grid-row:1; position:static; transform:none; width:auto;
+    background:var(--surface); border:1.5px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:14.5px; font-family:inherit; color:var(--ink);
+    cursor:pointer; pointer-events:auto; box-shadow:0 4px 16px rgba(61,57,41,.10);
+    transition:border-color .15s, color .15s, background .15s, box-shadow .15s;}
+  #prevBtn{grid-column:1;}
+  #nextBtn{grid-column:3;}
+  .navbtn:hover:not(:disabled){border-color:var(--accent); color:var(--accent); box-shadow:0 6px 20px rgba(61,57,41,.16);}
+  .navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .navbtn.primary:hover:not(:disabled){background:var(--accent-deep);}
+  .navbtn:disabled{opacity:.35; cursor:default; box-shadow:none;}
+  .navdots{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:13px; color:var(--ink-faint); min-width:80px; text-align:center;
+    background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:999px;
+    padding:3px 12px; box-shadow:0 2px 8px rgba(61,57,41,.06);}
+  @media (max-width:1080px){
+    .navbar{display:block; inset:0; width:auto; transform:none; padding:0;}
+    .navbtn{position:fixed; top:50%; transform:translateY(-50%);}
+    #prevBtn{left:max(10px, env(safe-area-inset-left));}
+    #nextBtn{right:max(10px, env(safe-area-inset-right));}
+    .navbtn{padding:10px 13px; font-size:14px;}
+  }
+  @media (max-width:560px){
+    .card{padding:24px 22px 28px;} .card h2{font-size:21px;}
+    .navbtn{width:42px; height:42px; padding:0; border-radius:50%; font-size:0;}
+    .navbtn::before{font-size:22px; line-height:1;}
+    #prevBtn::before{content:'←';} #nextBtn::before{content:'→';}
+  }
+  .nbar{height:5px; background:var(--surface-warm); border-radius:999px; overflow:hidden;
+    max-width:760px; margin:0 auto; width:calc(100% - 48px);}
+  .nbar > div{height:100%; background:var(--accent); width:0%; transition:width .3s ease;}
+  .donebtn{background:var(--ok); color:#fff; border:none; border-radius:12px;
+    padding:11px 34px; font-size:16px; font-family:inherit; cursor:pointer; margin-top:8px;}
+  .donebtn:hover{background:#4C7350;}
+  .donebtn:disabled{background:var(--ok); opacity:.75; cursor:default;}
+  .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
+  @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="home" href="../index.html">← 回課程首頁</a>
+  <span class="ttl">單元 4 ・ 第 3 章｜Primary Key 與 Unique Key — 為什麼不能隨便選</span>
+  <span class="pos" id="posText"></span>
+</div>
+<div class="nbar"><div id="nbarFill"></div></div>
+
+<div class="stage">
+
+  <section class="card active">
+    <span class="tag">歡迎回來</span>
+    <h2>Primary Key 與 Unique Key<br>為什麼不能隨便選</h2>
+    <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-1 再來。</p>
+    <p>一張客戶表有幾十萬筆紀錄,系統要怎麼「準確指著其中一筆」說:就是這筆?這一章要教資料庫最重要的概念之一:每筆紀錄的唯一識別。它也是之後理解資料關聯(4-4)和重複資料(單元 5)的鑰匙。</p>
+    <ul>
+      <li>說明 Primary Key 的條件,以及它為什麼不能隨便選。</li>
+      <li>分辨 Primary Key 和 Unique Key 的差異。</li>
+      <li>判斷「用 Email 當唯一識別」這類設計的風險。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境</span>
+    <h2>「系統裡有兩個王小明,改錯人了」</h2>
+    <p>Northstar Electronics 的客服更新了一位客戶的電話,隔天接到投訴:</p>
+    <div class="bubble">「有位王小明先生說他根本沒改過電話,但他的資料被改掉了。後來發現,系統裡有兩位王小明,客服改到另一位了。」</div>
+    <p>用「姓名」找人,遲早會遇到同名的人。這就是為什麼資料庫需要一個「保證不會重複」的識別方式——就像社會上有身分證字號,不會因為兩個人同名就搞混。這一章就是要講這把「身分證」怎麼設計。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 1/2</span>
+    <h2>為什麼點名要用學號,不用姓名</h2>
+    <p>想像一所學校要管理學生資料。用姓名點名,遇到兩個「陳怡君」就麻煩了;用座位號碼,學生換座位就亂了。所以學校發明了<strong>學號</strong>:每個學生一個、永遠不重複、入學就決定、畢業也不會變。</p>
+    <p><strong>Primary Key(主鍵,簡稱 PK)</strong>就是資料表裡的「學號」——每張表指定一個欄位(通常是系統自動編的編號),作為每筆紀錄的唯一識別。它有三個條件:</p>
+    <ul>
+      <li><strong>唯一</strong>:整張表裡不能有兩筆紀錄用同一個值。</li>
+      <li><strong>不能是 Null</strong>:每筆紀錄都必須有(呼應 4-2:Null 是「未知」,身分證不能是未知)。</li>
+      <li><strong>穩定不變</strong>:一旦指定,原則上永遠不改。</li>
+    </ul>
+    <div class="note">
+      <span class="nt">先記住這句</span>
+      Primary Key 是每筆紀錄的身分證:唯一、必填、永不改變。系統內部找資料、系統之間對資料,認的都是它。
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="tag">情境例子 2/2</span>
+    <h2>那 Email 呢?看起來也不會重複啊</h2>
+    <p>很多人直覺想:「Email 每個人都不一樣,拿來當客戶的唯一識別剛剛好。」這個想法很常見,也很危險。用「學號 vs 姓名」的邏輯想一想,Email 有三個問題:</p>
+    <ul>
+      <li><strong>它會變</strong>:客戶換公司、換信箱,Email 就變了。身分證不該跟著改。</li>
+      <li><strong>它可能共用</strong>:夫妻共用一個信箱、公司多人共用 info@ 開頭的信箱,都是實務上常見的情況。</li>
+      <li><strong>它可能沒有</strong>:有些客戶就是沒留 Email(4-2 教過的 Null),但 PK 不允許 Null。</li>
+    </ul>
+    <p>所以正規做法是:PK 用一個<strong>與業務無關、系統自動產生的編號</strong>(像 C001 或一串亂數),它唯一的工作就是「識別」,永遠不用改。Email 這類「業務上希望不要重複」的欄位,則交給另一個機制:<strong>Unique Key(唯一鍵)</strong>——它約束某欄位的值不能重複,但不承擔「身分證」的角色,通常也允許 Null。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">正式定義</span>
+    <h2>兩個名詞的正式說法</h2>
+    <table>
+      <tr><th style="width:26%;">名詞</th><th>定義</th><th style="width:26%;">重點差異</th></tr>
+      <tr><td><strong>Primary Key<br>主鍵</strong></td><td>資料表中作為每筆紀錄唯一識別的欄位;必須唯一、不可為 Null、原則上永不變更</td><td>一張表只有一個;是紀錄的正式身分</td></tr>
+      <tr><td><strong>Unique Key<br>唯一鍵</strong></td><td>約束某欄位(或欄位組合)的值不可重複的機制</td><td>一張表可以有多個;通常允許 Null;不承擔識別角色</td></tr>
+    </table>
+    <p>簡單記:PK 是「身分證」,Unique Key 是「不准重複的規則」。Email 適合設 Unique Key(避免重複註冊),但不適合當 PK(會變、可能共用、可能沒有)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">串起來看</span>
+    <h2>有了 PK,操作才能指得準</h2>
+    <p>回頭看開頭的「改錯王小明」事件,比較兩種更新方式:</p>
+<pre>危險的方式:
+「把姓名是王小明的客戶,電話改成 0933-xxx-xxx」
+→ 兩位王小明,兩筆都可能被改到
+
+正確的方式:
+「把客戶編號 C04521 的電話,改成 0933-xxx-xxx」
+→ PK 唯一,指哪筆就是哪筆,不會誤傷</pre>
+    <p>系統內部的更新、刪除,底層都是靠 PK 指定對象的。畫面上您點開某筆客戶資料按「編輯」,背後其實就是「編輯 PK 為某某值的那筆紀錄」。這也是為什麼 PK 穩定不變這麼重要——它一變,所有指著它的操作和關聯(下一章的主題)都會跟著失準。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">為什麼要學這個</span>
+    <h2>兩個馬上用得到的場景</h2>
+    <h3>場景一:資料整合時,第一個要問的問題</h3>
+    <p>兩個系統要同步客戶資料,第一個關鍵問題永遠是:「兩邊怎麼認出『同一位客戶』?」如果對方回答「用 Email 對」,您現在已經知道該追問什麼:Email 會變怎麼辦?共用信箱怎麼辦?沒有 Email 的客戶怎麼辦?這些問題,單元 5 的 Matching 會再深入。</p>
+    <h3>場景二:判斷重複資料的根源</h3>
+    <p>系統裡出現重複客戶,常見原因之一就是「識別規則設計不良」:例如靠 Email 判斷是否為同一人,結果同一位客戶用了兩個信箱,就被建成兩筆。理解 PK 與識別邏輯,才能從根源討論解法,而不是永遠在事後手動合併。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 1/2</span>
+    <h2>好的 PK,跟業務內容無關</h2>
+    <h3>概念一:PK 的唯一工作是識別,不要讓它兼差</h3>
+    <p>系統自動編的流水號或亂數,看起來「沒有意義」,但這正是優點:它不承載業務含義,所以永遠不需要因為業務變化而修改。反過來,任何有業務含義的欄位(Email、電話、統一編號)都可能變動或有例外,兼差當識別就會出事。</p>
+    <h3>概念二:「業務上想避免重複」用 Unique Key 處理</h3>
+    <p>「同一個 Email 不能註冊兩次」是合理的業務規則,用 Unique Key 實現它。這樣 Email 變更時只是改一個普通欄位的值,紀錄的身分(PK)不受影響,兩層需求各自被正確的機制滿足。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">核心概念 2/2</span>
+    <h2>跨系統時,識別問題會加倍複雜</h2>
+    <h3>概念三:每個系統有自己的 PK,彼此並不相通</h3>
+    <p>CRM 裡的客戶編號,和 ERP 裡的客戶編號,通常是兩套各自獨立的 PK。整合時需要一張「對照」——記錄 CRM 的 C04521 對應 ERP 的 CU-9981。這個對照關係本身也是需要維護的資料,漏了它,兩邊就對不起來。</p>
+    <h3>概念四:改 PK 的代價極高,所以一開始就要選對</h3>
+    <p>PK 被整張表的關聯、整合、報表指著。要更換一張大表的 PK,幾乎等於一次小型系統改造。這就是本章標題的答案:不能隨便選,因為選錯之後,改的代價大到多數團隊寧可繞道而行。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">容易混淆</span>
+    <h2>兩組容易搞混的概念</h2>
+    <table>
+      <tr><th style="width:30%;">容易混淆的一組</th><th>怎麼分</th></tr>
+      <tr><td>Primary Key vs Unique Key</td><td>PK 是紀錄的正式身分:唯一、必填、不變、一張表只有一個。Unique Key 只是「不准重複」的約束:可以有多個、通常允許 Null、不承擔識別角色。</td></tr>
+      <tr><td>「不會重複的欄位」vs「適合當 PK 的欄位」</td><td>Email 現在不重複,不代表適合當 PK——還要看它會不會變、會不會缺。PK 要的是「永遠唯一且不變」,不是「目前剛好唯一」。</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <span class="tag">案例</span>
+    <h2>Northstar Electronics 的會員整合難題</h2>
+    <p>Northstar 要把官網會員系統和 CRM 的客戶資料整合,兩邊的識別方式如下:</p>
+<pre>官網會員系統:PK 是會員編號(M-00001 起的流水號),Email 設了 Unique Key
+CRM System:PK 是客戶編號(C00001 起的流水號)
+整合需求:同一個人,在兩個系統要能對起來</pre>
+    <ol>
+      <li><strong>有哪些角色?</strong>官網會員系統、CRM System、負責整合的團隊。</li>
+      <li><strong>資料如何移動?</strong>兩邊各有自己的 PK,需要建立一張對照:哪個會員編號對應哪個客戶編號。</li>
+      <li><strong>各部分負責什麼?</strong>初次比對時,可能得暫時借用 Email 來「猜」哪兩筆是同一人;比對確認後,把對照關係正式記下來,之後就認對照表,不再依賴 Email。</li>
+      <li><strong>哪裡可能出錯?</strong>如果永遠依賴 Email 比對:客戶改了信箱,兩邊就斷了線;共用信箱的兩個人,可能被誤判成同一人。</li>
+      <li><strong>第一個合理的檢查方向?</strong>整合後發現「同一個人兩邊對不起來」,先查對照關係有沒有建立、比對當時用的規則是什麼,而不是直接手動改資料。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">延伸對照(選讀)</span>
+    <h2>這些概念在 Salesforce 裡的樣子</h2>
+    <p>不熟悉這些產品的話,這張卡片可以跳過。</p>
+    <table>
+      <tr><th style="width:30%;">通用概念</th><th>Salesforce 對照</th></tr>
+      <tr><td>Primary Key</td><td>Record ID(每筆紀錄系統自動產生的 15/18 碼識別碼)</td></tr>
+      <tr><td>Unique Key</td><td>設定為 Unique 的自訂欄位;整合常用的 External ID 欄位</td></tr>
+    </table>
+    <p>Salesforce 的 External ID 正是「跨系統對照」概念的具體實作:用它存放另一個系統的識別碼,讓兩邊的資料能穩定對應。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">常見誤解</span>
+    <h2>三個很多人踩過的坑</h2>
+    <h3>誤解一:「Email 不會重複,拿來當唯一識別剛剛好」</h3>
+    <p>Email 會變、可能共用、可能沒有。它適合設 Unique Key 避免重複註冊,但不適合承擔「身分證」的角色。</p>
+    <h3>誤解二:「PK 只是技術細節,顧問不用管」</h3>
+    <p>「兩個系統怎麼認出同一筆資料」是整合專案最核心的設計決策之一,直接影響重複資料、同步錯亂等日後的麻煩。顧問在需求階段就該把這個問題擺上桌。</p>
+    <h3>誤解三:「反正之後可以再改 PK」</h3>
+    <p>PK 被關聯、整合、報表層層指著,上線後更換的代價極高。這類決策屬於「一開始多花一小時想清楚,勝過日後花一個月補救」的典型。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">遇到問題先查什麼</span>
+    <h2>「資料改錯筆／對不起來」的檢查順序</h2>
+    <ol>
+      <li><strong>確認操作或整合是用什麼欄位識別紀錄的。</strong>是 PK,還是姓名、Email 這類會重複或會變的欄位?</li>
+      <li><strong>確認表裡是否存在「識別值相同」的多筆紀錄。</strong>例如同名、同 Email 的情況。</li>
+      <li><strong>如果是跨系統問題,確認對照關係是否存在且正確。</strong>兩邊的 PK 是怎麼對應起來的?</li>
+      <li><strong>確認識別欄位最近有沒有被變更過。</strong>例如客戶改了 Email,導致比對斷鏈。</li>
+      <li><strong>把發現整理成規則問題回報。</strong>如果根源是識別規則設計不良,個案修補之外,更該討論規則本身。</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <span class="tag">重點整理</span>
+    <h2>帶走這四句話</h2>
+    <ol>
+      <li>Primary Key 是紀錄的身分證:唯一、必填、永不改變,一張表只有一個。</li>
+      <li>好的 PK 與業務內容無關,通常是系統自動產生的編號,它的唯一工作就是識別。</li>
+      <li>Email 這類欄位適合設 Unique Key 防止重複,但不適合當 PK——它會變、可能共用、可能沒有。</li>
+      <li>跨系統整合的第一個問題永遠是「兩邊怎麼認出同一筆資料」,答案的品質決定日後的資料品質。</li>
+    </ol>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 1/4</span>
+    <h2>下列哪一項是 Primary Key 必須滿足的條件?</h2>
+    <button class="opt" data-val="A" type="button">A. 必須是客戶看得懂的有意義編號</button>
+    <button class="opt" data-val="B" type="button">B. 唯一、不可為 Null、原則上永不變更</button>
+    <button class="opt" data-val="C" type="button">C. 必須是 Email 格式</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>B</strong>。PK 的三個條件:唯一、不可為 Null、穩定不變。有沒有業務意義反而不重要,無意義的流水號常常是更好的選擇。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="B">
+    <span class="tag">檢核 2/4</span>
+    <h2>是非題:Email 每個人都不一樣,所以很適合拿來當客戶表的 Primary Key。</h2>
+    <button class="opt" data-val="A" type="button">是,反正不會重複</button>
+    <button class="opt" data-val="B" type="button">否,Email 會變、可能共用、可能沒有,不適合當 PK</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是<strong>「否」</strong>。Email 適合設 Unique Key 避免重複註冊,但它會變動、可能共用、可能是 Null,不符合 PK 的條件。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="A">
+    <span class="tag">檢核 3/4</span>
+    <h2>「同一個 Email 不能重複註冊」這個業務規則,最適合用什麼機制實現?</h2>
+    <button class="opt" data-val="A" type="button">A. 在 Email 欄位設 Unique Key</button>
+    <button class="opt" data-val="B" type="button">B. 把 Email 設成 Primary Key</button>
+    <button class="opt" data-val="C" type="button">C. 請客服人工檢查每筆註冊</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>A</strong>。Unique Key 正是「不准重複」的約束機制,能滿足業務需求,又不讓 Email 承擔身分識別的角色。</div>
+    </div>
+  </section>
+
+  <section class="card quiz-card" data-answer="C">
+    <span class="tag">檢核 4/4</span>
+    <h2>情境題:客服說「系統裡有兩位王小明,我改錯人了」。從設計面看,避免這類事故的關鍵是什麼?</h2>
+    <button class="opt" data-val="A" type="button">A. 規定客戶不能同名</button>
+    <button class="opt" data-val="B" type="button">B. 請客服下次看仔細一點</button>
+    <button class="opt" data-val="C" type="button">C. 操作與更新都以 PK(客戶編號)指定對象,畫面上同時顯示編號輔助辨識</button>
+    <button class="checkbtn" type="button" disabled>檢核答案</button>
+    <div class="verdict"><div class="v-title"></div>
+      <div>正確答案是 <strong>C</strong>。姓名天生會重複,靠人小心是不可靠的。系統操作以唯一的 PK 指定對象,再輔以畫面顯示更多辨識資訊,才是治本的設計。</div>
+    </div>
+  </section>
+
+  <section class="card" id="finishCard">
+    <span class="tag">本章完成</span>
+    <h2>辛苦了,這一章也讀完了</h2>
+    <p id="scoreText"></p>
+    <p>留一個小小的思考題:</p>
+    <div class="bubble">您手上專案的系統,客戶資料的 PK 是什麼?如果要和另一個系統整合,兩邊會用什麼方式認出「同一位客戶」?</div>
+    <p>下一章,PK 要開始發揮它最大的作用了:讓資料表彼此「認識」——Foreign Key 與資料關聯。</p>
+    <button class="donebtn" id="markDone" type="button">✓ 標記本章完成</button>
+    <div>
+      <a class="backlink" href="../index.html">回課程首頁</a>
+      <a class="backlink" href="ch4-4.html">前往下一章：4-4 Foreign Key 與資料關聯 →</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button class="navbtn" id="prevBtn" type="button">← 上一頁</button>
+  <span class="navdots" id="dotText"></span>
+  <button class="navbtn primary" id="nextBtn" type="button">下一頁 →</button>
+</div>
+
+<script>
+(function(){
+  var CH_ID = '4-3';
+  var KEY = 'eac-progress';
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var idx = 0, total = cards.length;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizTotal = document.querySelectorAll('.quiz-card').length;
+  var quizCorrect = 0, quizAnswered = 0;
+
+  function show(i){
+    cards[idx].classList.remove('active');
+    idx = Math.max(0, Math.min(total - 1, i));
+    cards[idx].classList.add('active');
+    prevBtn.disabled = (idx === 0);
+    nextBtn.disabled = (idx === total - 1);
+    document.getElementById('posText').textContent = '第 ' + (idx+1) + ' / ' + total + ' 頁';
+    document.getElementById('dotText').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('nbarFill').style.width = ((idx+1)/total*100) + '%';
+    if(cards[idx].id === 'finishCard'){ renderScore(); }
+    window.scrollTo(0,0);
+  }
+
+  prevBtn.addEventListener('click', function(){ show(idx-1); });
+  nextBtn.addEventListener('click', function(){ show(idx+1); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' && !nextBtn.disabled) show(idx+1);
+    if(e.key === 'ArrowLeft' && !prevBtn.disabled) show(idx-1);
+  });
+
+  document.querySelectorAll('.quiz-card').forEach(function(card){
+    var answer = card.getAttribute('data-answer');
+    var opts = card.querySelectorAll('.opt');
+    var checkBtn = card.querySelector('.checkbtn');
+    var verdict = card.querySelector('.verdict');
+    var picked = null, done = false;
+
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(done) return;
+        opts.forEach(function(o){ o.classList.remove('picked'); });
+        opt.classList.add('picked');
+        picked = opt;
+        checkBtn.disabled = false;
+      });
+    });
+
+    checkBtn.addEventListener('click', function(){
+      if(done || !picked) return;
+      done = true;
+      quizAnswered++;
+      var isRight = (picked.getAttribute('data-val') === answer);
+      if(isRight){ quizCorrect++; }
+      opts.forEach(function(o){
+        o.disabled = true;
+        if(o.getAttribute('data-val') === answer){ o.classList.add('correct'); }
+      });
+      if(!isRight){ picked.classList.add('wrong'); }
+      verdict.classList.add(isRight ? 'good' : 'bad', 'show');
+      verdict.querySelector('.v-title').textContent =
+        isRight ? '答對了,很棒!' : '沒關係,看看詳解就懂了';
+      checkBtn.disabled = true;
+    });
+  });
+
+  function renderScore(){
+    var el = document.getElementById('scoreText');
+    if(quizAnswered === 0){
+      el.textContent = '這次您跳過了檢核題。想試試的話,可以往回翻幾頁作答;直接標記完成也沒問題。';
+    }else{
+      el.textContent = '檢核結果:' + quizTotal + ' 題中答對 ' + quizCorrect + ' 題。' +
+        (quizCorrect >= Math.ceil(quizTotal*0.8)
+          ? '掌握得很好,可以放心前進下一章。'
+          : (quizCorrect >= Math.ceil(quizTotal*0.6)
+            ? '大致掌握了。建議回頭再看一眼「容易混淆」和「重點整理」那兩張卡片。'
+            : '建議把這一章再讀一次,特別是情境例子的部分。慢慢來,不急。'));
+    }
+  }
+
+  var markBtn = document.getElementById('markDone');
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function refreshMarkBtn(){
+    if(loadProgress()[CH_ID]){
+      markBtn.textContent = '✓ 已完成本章';
+      markBtn.disabled = true;
+    }
+  }
+  markBtn.addEventListener('click', function(){
+    var p = loadProgress();
+    p[CH_ID] = true;
+    try{ localStorage.setItem(KEY, JSON.stringify(p)); }catch(e){}
+    refreshMarkBtn();
+  });
+  refreshMarkBtn();
+
+  show(0);
+})();
+</script>
+</body>
+</html>
