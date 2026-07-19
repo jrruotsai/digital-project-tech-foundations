@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>4-5 One-to-One、One-to-Many、Many-to-Many｜企業應用顧問技術基礎培訓</title>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 <style>
   :root{
     --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
@@ -161,6 +162,39 @@
     <p>回到學生與社團。學校想記錄「誰參加了什麼社團」,該記在哪?記在學生名冊上,一個學生參加三個社團就要三個欄位,參加第四個就爆了(4-1 提過這種窘境);記在社團名冊上,同樣的問題換邊發生。</p>
     <p>學校實際的做法是:準備一本<strong>「社團報名紀錄簿」</strong>,每一行記一組配對:「學號 S1024 – 吉他社」「學號 S1024 – 排球社」「學號 S2077 – 吉他社」。學生要參加幾個社團就登記幾行,誰也不會爆。</p>
     <p>資料庫一模一樣:多對多的解法,是在兩張表中間開第三張表,叫<strong>中間表(Junction Table)</strong>。它每一筆紀錄就是「一組配對」,身上帶著兩個 FK,一個指向學生,一個指向社團。訂單與產品的難題同解:開一張 <strong>Order Item(訂單明細)</strong>表,每筆記「哪張訂單、買了哪個產品、數量多少」。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">視覺圖解</span>
+    <h2>不用背名稱，直接看關聯的形狀</h2>
+    <p>每一列都從左右各問一次：「一筆可以對到幾筆？」</p>
+    <figure class="learning-figure" aria-labelledby="relation-caption">
+      <span class="figure-eyebrow">Relationship cardinality</span>
+      <div class="relation-stack" role="img" aria-label="一對一是一個人對一本護照；一對多是一位客戶對多張訂單；多對多需要用中間表連接多位學生與多個社團">
+        <div class="relation-row">
+          <div class="relation-name">One-to-One</div>
+          <div class="relation-shape">
+            <span class="entity-dot">人</span><span class="relation-line"></span><span class="entity-dot">護照</span>
+          </div>
+        </div>
+        <div class="relation-row">
+          <div class="relation-name">One-to-Many</div>
+          <div class="relation-shape">
+            <span class="entity-dot">客戶</span><span class="relation-line"></span>
+            <span class="entity-group"><span class="entity-dot">訂單</span><span class="entity-dot">訂單</span><span class="entity-dot">訂單</span></span>
+          </div>
+        </div>
+        <div class="relation-row">
+          <div class="relation-name">Many-to-Many</div>
+          <div class="relation-shape">
+            <span class="entity-group"><span class="entity-dot">學生</span><span class="entity-dot">學生</span></span>
+            <span class="relation-line"></span><span class="junction">中間表</span><span class="relation-line"></span>
+            <span class="entity-group"><span class="entity-dot">社團</span><span class="entity-dot">社團</span></span>
+          </div>
+        </div>
+      </div>
+      <figcaption id="relation-caption">多對多不能只在任一邊放一個 FK；中間表把每一組「學生 × 社團」配對記成獨立紀錄。</figcaption>
+    </figure>
   </section>
 
   <section class="card">

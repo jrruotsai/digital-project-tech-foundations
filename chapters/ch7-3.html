@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>7-3 Producer、Consumer 與 Queue — 事件的生產線｜企業應用顧問技術基礎培訓</title>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 <style>
   :root{
     --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
@@ -129,6 +130,34 @@
   <section class="card"><span class="tag">情境例子 1/2</span><h2>先把「Producer」當成一張交接單</h2><p>交接單會寫清楚誰交給誰、交付什麼、何時完成。少一欄，接手者就得猜。企業系統也是一樣：Producer 產生事件，Queue 暫存，Consumer 處理；三者分開能降低同時在線的依賴。</p><div class="note"><span class="nt">先記住</span>名詞只是入口；真正要確認的是責任、資料、規則與可觀察結果。</div></section>
 
   <section class="card"><span class="tag">情境例子 2/2</span><h2>規則要能處理例外</h2><p>順利的案例通常看不出設計好壞。資料空白、訊息重送、權限不足或服務延遲時，規則是否仍說得通，才是實務考驗。</p><p>Consumer 變慢時若沒有 Queue，Producer 也可能被拖住。</p><div class="note"><span class="nt">判斷方式</span>把正常路徑和一個失敗情境各走一次。</div></section>
+
+  <section class="card">
+    <span class="tag">視覺圖解</span>
+    <h2>Queue 像緩衝區，不是處理者</h2>
+    <p>Producer 不必等 Consumer 立刻處理完；先把事件交給 Queue，就能把「產生」與「處理」拆開。</p>
+    <figure class="learning-figure" aria-labelledby="queue-caption">
+      <span class="figure-eyebrow">Event-driven pipeline</span>
+      <div class="queue-pipeline" role="img" aria-label="Producer 產生事件放入 Queue，Queue 暫存多筆訊息，Consumer 依能力逐筆取出處理">
+        <div class="visual-node blue">
+          <strong>Producer</strong>
+          <span>訂單成立<br>產生事件</span>
+        </div>
+        <div class="visual-arrow" aria-hidden="true">→</div>
+        <div class="queue-box">
+          <div class="queue-message">Event #103</div>
+          <div class="queue-message">Event #102</div>
+          <div class="queue-message">Event #101</div>
+        </div>
+        <div class="visual-arrow" aria-hidden="true">→</div>
+        <div class="visual-node green">
+          <strong>Consumer</strong>
+          <span>逐筆讀取<br>更新 CRM</span>
+        </div>
+      </div>
+      <p class="queue-caption">Producer 快一點、Consumer 慢一點時，Queue 先接住等待處理的事件。</p>
+      <figcaption id="queue-caption">Queue 只負責暫存與交付。事件是否成功處理，仍要看 Consumer 的結果、Retry 與 Error Queue。</figcaption>
+    </figure>
+  </section>
 
   <section class="card"><span class="tag">正式定義</span><h2>本章術語定義</h2><table><tr><th>術語</th><th>工作定義</th></tr><tr><td><strong>Producer</strong></td><td>產生事件或訊息的元件</td></tr><tr><td><strong>Consumer／Queue</strong></td><td>Consumer 處理訊息；Queue 暫存等待處理的訊息</td></tr><tr><td><strong>Evidence</strong></td><td>可用來核對本章結果的 Log、設定、資料、時間、版本或識別值。</td></tr></table><p>定義先回答「它是什麼」，後面的案例再回答「什麼時候用」。</p></section>
 
