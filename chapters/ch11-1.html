@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>不同系統環境的用途 — Dev、SIT、UAT、Staging、Production</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>Dev、SIT、UAT、Staging 與 Production 各有用途；測試結果要結合環境差異解讀。</p><ul><li>看懂 不同系統環境的用途 與 Dev、SIT、UAT、Staging、Production 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>同一個變更，要經過不同目的的環境</h2><figure class="learning-figure" aria-labelledby="env-caption"><span class="figure-eyebrow">DELIVERY PATH / 環境晉升</span><div class="diagram-track"><div class="diagram-step"><span class="diagram-badge">DEV</span><b>開發</b><small>快速修改與單元驗證</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step gold"><span class="diagram-badge">SIT</span><b>整合測試</b><small>確認系統接得起來</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step purple"><span class="diagram-badge">UAT</span><b>業務驗收</b><small>確認流程符合需求</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step"><span class="diagram-badge">STG</span><b>上線彩排</b><small>模擬正式設定</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step green"><span class="diagram-badge">PROD</span><b>正式服務</b><small>真實使用者與資料</small></div></div><div class="diagram-callout">每次往右移動都要帶著相同版本、明確核准與環境差異紀錄；測試資料不可隨意進入 Production。</div><figcaption id="env-caption">環境不是五份隨意修改的副本，而是一條逐步降低上線風險的驗證路徑。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：不同系統環境的用途 — Dev、SIT、UAT、Staging、Production</h2><p>測試環境正常的變更，上線後卻出現設定差異。團隊知道問題和「不同系統環境的用途」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>用正式資料在開發環境測試，會造成隱私與存取風險。</p></section>
 

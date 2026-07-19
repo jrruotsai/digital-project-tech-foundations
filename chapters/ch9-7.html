@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>OAuth 基礎 — 授權而不交出密碼</h2><p class="lead">預估 30 分鐘 ・ Authentication、Authorization 與 SSO</p><p>OAuth 讓應用取得有限授權，不必拿到使用者密碼；Scope 與 Token 限制可做的事。</p><ul><li>看懂 OAuth 與 授權而不交出密碼 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>把有限權限交給應用，而不是交出密碼</h2><figure class="learning-figure" aria-labelledby="oauth-caption"><span class="figure-eyebrow">OAUTH DELEGATION / 委派授權</span><div class="diagram-track"><div class="diagram-step"><span class="diagram-badge">1</span><b>應用請求授權</b><small>需要讀取行事曆</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step gold"><span class="diagram-badge">2</span><b>使用者同意 Scope</b><small>只允許 calendar.read</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step purple"><span class="diagram-badge">3</span><b>授權伺服器發 Token</b><small>有期限、可撤銷</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step green"><span class="diagram-badge">4</span><b>API 驗證 Token</b><small>只執行被允許的動作</small></div></div><div class="diagram-callout">Access Token 像有期限的代辦證，不是使用者密碼；Scope 決定它能進哪些門、做哪些事。</div><figcaption id="oauth-caption">OAuth 解決的是「應用可以替我做什麼」，並不單獨證明「我是誰」。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：OAuth 基礎 — 授權而不交出密碼</h2><p>使用者無法登入企業應用，畫面只顯示身分驗證失敗。團隊知道問題和「OAuth」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>把 Access Token 當成永久密碼保存，會放大外洩風險。</p></section>
 

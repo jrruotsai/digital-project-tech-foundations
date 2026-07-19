@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>分層除錯方法 — 從 User 到 Database 的檢查順序</h2><p class="lead">預估 30 分鐘 ・ 系統化除錯與 Root Cause Analysis</p><p>分層除錯從 User、Browser、Network、Application、API、Automation 到 Database，逐層縮小範圍。</p><ul><li>看懂 分層除錯方法 與 從 User 到 Database 的檢查順序 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>從使用者看到的現象，逐層走到資料庫</h2><figure class="learning-figure" aria-labelledby="debug-caption"><span class="figure-eyebrow">LAYERED TROUBLESHOOTING / 一次驗證一層</span><div class="debug-stack"><div class="debug-layer"><em>1</em><b>User</b><span>誰、何時、做了哪些步驟？</span></div><div class="debug-layer"><em>2</em><b>Browser</b><span>Console、Storage、畫面狀態</span></div><div class="debug-layer"><em>3</em><b>Network / API</b><span>Request、Response、Status、Request ID</span></div><div class="debug-layer"><em>4</em><b>Application</b><span>權限、驗證、商業規則與 Log</span></div><div class="debug-layer"><em>5</em><b>Automation</b><span>觸發、排程、重試與錯誤佇列</span></div><div class="debug-layer"><em>6</em><b>Database</b><span>是否寫入、值是否正確、交易是否完成</span></div></div><div class="diagram-callout">找到第一個「輸入正確、輸出錯誤」的邊界，就能把問題範圍交給正確的負責人。</div><figcaption id="debug-caption">不要同時修改多層；每層先收集證據，再決定是否往下一層。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：分層除錯方法 — 從 User 到 Database 的檢查順序</h2><p>使用者回報功能壞了，但沒有時間、步驟或錯誤畫面。團隊知道問題和「分層除錯方法」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>同時改瀏覽器、權限與資料，成功後也不知道是哪一步有效。</p></section>
 

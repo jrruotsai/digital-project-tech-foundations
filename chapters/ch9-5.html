@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>SAML 基礎 — 企業 SSO 最常見的協定</h2><p class="lead">預估 30 分鐘 ・ Authentication、Authorization 與 SSO</p><p>SAML 透過瀏覽器在 IdP 與 SP 間傳遞簽署的 Assertion，常用於企業 Web SSO。</p><ul><li>看懂 SAML 與 企業 SSO 最常見的協定 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>SAML 登入：瀏覽器替兩邊傳話</h2><figure class="learning-figure" aria-labelledby="saml-caption"><span class="figure-eyebrow">SAML SSO / 三方時序</span><div class="diagram-track"><div class="diagram-step"><span class="diagram-badge">1</span><b>使用者 → SP</b><small>開啟企業應用</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step gold"><span class="diagram-badge">2</span><b>SP → IdP</b><small>轉向公司登入頁</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step purple"><span class="diagram-badge">3</span><b>IdP → Browser</b><small>簽署 SAML Assertion</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step green"><span class="diagram-badge">4</span><b>Browser → SP</b><small>提交 Assertion 並建立 Session</small></div></div><div class="diagram-callout">SP 不接收 IdP 的密碼；它驗證 Assertion 的簽章、Audience、時間與使用者對應。</div><figcaption id="saml-caption">SAML 訊息通常經由 Browser 傳遞，IdP 負責驗身分，SP 負責提供服務。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：SAML 基礎 — 企業 SSO 最常見的協定</h2><p>使用者無法登入企業應用，畫面只顯示身分驗證失敗。團隊知道問題和「SAML」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>時間差、端點或憑證設定錯誤都可能讓 Assertion 被拒絕。</p></section>
 

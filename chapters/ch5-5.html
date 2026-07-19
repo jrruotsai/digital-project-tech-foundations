@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -124,6 +125,13 @@
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>Field Mapping 與 Transformation<br>欄位對欄位的翻譯</h2>
     <p class="lead">預估 30 分鐘 ・ 建議先讀完 5-4。</p><p>兩套系統都存客戶資料，不代表欄位能直接接上。來源叫 mobile，目標叫 Phone；來源用 M/F，目標用 Male/Female。整合前得先做一張翻譯表。</p><ul><li>分辨 Mapping 與 Transformation。</li><li>能讀懂欄位對照與代碼轉換規則。</li><li>知道型別、必填和長度限制為何會讓匯入失敗。</li></ul>
+  </section>
+
+  <section class="card"><span class="tag">圖解</span><h2>Mapping 決定去哪裡，Transformation 決定怎麼改</h2>
+    <figure class="learning-figure" aria-labelledby="mapping-caption"><span class="figure-eyebrow">FIELD TRANSLATION / 欄位翻譯表</span>
+      <div class="mapping-grid"><div class="mapping-column"><div class="mapping-field"><b>mobile</b>0912-345-678</div><div class="mapping-field"><b>country</b>TW</div><div class="mapping-field"><b>full_name</b>王小明</div></div><div class="mapping-lines" aria-hidden="true"><span>→</span><span>→</span><span>→</span></div><div class="mapping-column"><div class="mapping-field"><b>Phone</b>+886 912 345 678</div><div class="mapping-field"><b>Country</b>Taiwan</div><div class="mapping-field"><b>Last / First Name</b>王 / 小明</div></div></div>
+      <div class="diagram-callout">目的欄位的型別、長度、必填與代碼規則，也都是轉換規格的一部分。</div><figcaption id="mapping-caption">左邊是來源，右邊是目標；箭頭代表一條可驗證、可追蹤的欄位規則。</figcaption>
+    </figure>
   </section>
 
   <section class="card"><span class="tag">情境</span><h2>「欄位都有，為什麼還是匯不進去？」</h2>

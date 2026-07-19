@@ -269,6 +269,101 @@
 }
 .queue-caption { margin-top: 12px; text-align: center; color: var(--ink-soft); font-size: 13px; }
 
+/* Reusable visual grammar for the second learning-aid pass. */
+.diagram-track {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.diagram-step {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 104px;
+  padding: 14px 12px;
+  align-content: center;
+  border: 1px solid color-mix(in srgb, var(--step-color, var(--visual-blue)) 38%, white);
+  border-radius: 12px;
+  background: var(--step-bg, var(--visual-blue-soft));
+  text-align: center;
+}
+.diagram-step b { color: var(--ink); font-size: 14px; line-height: 1.45; }
+.diagram-step small { margin-top: 5px; color: var(--ink-soft); font-size: 11.5px; line-height: 1.45; }
+.diagram-step.gold { --step-color: var(--visual-gold); --step-bg: var(--visual-gold-soft); }
+.diagram-step.green { --step-color: var(--visual-green); --step-bg: var(--visual-green-soft); }
+.diagram-step.purple { --step-color: var(--visual-purple); --step-bg: var(--visual-purple-soft); }
+.diagram-arrow {
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 900;
+}
+.diagram-arrow::before { content: '\2192'; }
+.diagram-badge {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 8px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.82);
+  color: var(--step-color, var(--visual-blue));
+  font: 800 12px/1 Georgia, serif;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.diagram-callout {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-left: 4px solid var(--visual-gold);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255,255,255,.78);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.dom-tree { display: grid; gap: 10px; justify-items: center; }
+.dom-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; width: 100%; }
+.dom-node {
+  padding: 7px 13px;
+  border: 1px solid #bfd3dc;
+  border-radius: 8px;
+  background: var(--visual-blue-soft);
+  color: var(--visual-blue);
+  font: 700 12.5px/1.4 Consolas, monospace;
+}
+.dom-node.root { border-color: #d8b77a; background: var(--visual-gold-soft); color: #765317; }
+.dom-branch { width: 2px; height: 15px; background: var(--ink-faint); }
+
+.mini-tables { display: grid; grid-template-columns: 1fr 50px 1fr; align-items: center; gap: 10px; }
+.mini-table { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.mini-table b { display: block; padding: 7px 10px; background: var(--surface-warm); font-size: 12px; }
+.mini-table span { display: grid; grid-template-columns: 1fr 1fr; padding: 5px 10px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 11.5px; }
+.join-mark { text-align: center; color: var(--accent); font-size: 22px; font-weight: 900; }
+.join-result { margin-top: 12px; padding: 9px; border: 1px solid #c8ddc9; border-radius: 10px; background: var(--visual-green-soft); color: #426846; font-size: 12px; text-align: center; }
+
+.mapping-grid { display: grid; grid-template-columns: 1fr 38px 1fr; gap: 8px; align-items: center; }
+.mapping-column { display: grid; gap: 7px; }
+.mapping-field { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--ink-soft); font-size: 12px; }
+.mapping-field b { display: block; color: var(--ink); }
+.mapping-lines { display: grid; gap: 24px; color: var(--accent); font-weight: 900; text-align: center; }
+
+.git-graph { display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; }
+.git-dot { position: relative; display: grid; width: 30px; height: 30px; margin: 4px 0 18px; place-items: center; border: 3px solid var(--visual-blue); border-radius: 50%; background: white; color: var(--visual-blue); font-size: 10px; font-weight: 800; }
+.git-dot::after { position: absolute; top: 27px; width: 3px; height: 23px; background: #bfd3dc; content: ''; }
+.git-dot:last-of-type::after { display: none; }
+.git-label { min-width: 0; margin: 4px 0 18px; padding: 5px 10px; border-radius: 8px; background: white; color: var(--ink-soft); font-size: 12px; }
+.git-label b { color: var(--ink); }
+
+.debug-stack { display: grid; gap: 6px; }
+.debug-layer { display: grid; grid-template-columns: 32px 130px 1fr; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.debug-layer em { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: var(--visual-blue-soft); color: var(--visual-blue); font-size: 11px; font-style: normal; font-weight: 800; }
+.debug-layer b { font-size: 12.5px; }
+.debug-layer span { color: var(--ink-soft); font-size: 11.5px; }
+
 @media (max-width: 650px) {
   .learning-figure { padding: 16px; }
   .visual-flow,
@@ -285,6 +380,14 @@
   .relation-row { grid-template-columns: 1fr; }
   .relation-name { text-align: center; }
   .box-content { min-width: 110px; }
+  .diagram-track { flex-direction: column; }
+  .diagram-arrow { flex-basis: 20px; transform: rotate(90deg); }
+  .mini-tables { grid-template-columns: 1fr; }
+  .join-mark { transform: rotate(90deg); }
+  .mapping-grid { grid-template-columns: 1fr; }
+  .mapping-lines { display: none; }
+  .debug-layer { grid-template-columns: 32px 1fr; }
+  .debug-layer span { grid-column: 2; }
 }
 
 @media (prefers-reduced-motion: reduce) {

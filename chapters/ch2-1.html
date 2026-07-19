@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -132,6 +133,25 @@
       <li>用自己的話說明 IP、Domain、DNS 三者的關係。</li>
       <li>聽到「網站打不開」時,知道這可能跟「找不到地方」有關,而不只是「Server 壞了」。</li>
     </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">圖解</span>
+    <h2>輸入網址後，瀏覽器怎麼找到網站？</h2>
+    <figure class="learning-figure" aria-labelledby="dns-caption">
+      <span class="figure-eyebrow">DNS LOOKUP / 從名稱找到位置</span>
+      <div class="diagram-track">
+        <div class="diagram-step"><span class="diagram-badge">1</span><b>輸入 Domain</b><small>northstar.com</small></div>
+        <span class="diagram-arrow" aria-hidden="true"></span>
+        <div class="diagram-step gold"><span class="diagram-badge">2</span><b>DNS 查詢</b><small>請問這個名稱的 IP？</small></div>
+        <span class="diagram-arrow" aria-hidden="true"></span>
+        <div class="diagram-step green"><span class="diagram-badge">3</span><b>取得 IP</b><small>203.0.113.25</small></div>
+        <span class="diagram-arrow" aria-hidden="true"></span>
+        <div class="diagram-step purple"><span class="diagram-badge">4</span><b>連到 Server</b><small>開始送出 HTTP Request</small></div>
+      </div>
+      <div class="diagram-callout">DNS 只負責把好記的名稱翻成機器使用的 IP；真正的網頁內容仍由 Server 回傳。</div>
+      <figcaption id="dns-caption">把 DNS 想成查地址：先取得目的地，再出發連線。</figcaption>
+    </figure>
   </section>
 
   <section class="card">

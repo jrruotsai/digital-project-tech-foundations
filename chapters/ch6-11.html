@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>Middleware 與 Message Queue — 系統之間的轉運站</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>Middleware 負責轉換、路由與協調；Message Queue 暫存訊息並讓生產者與消費者解耦。</p><ul><li>看懂 Middleware 與 Message Queue 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>Middleware 是轉運站，Queue 是候車區</h2><figure class="learning-figure" aria-labelledby="middleware-caption"><span class="figure-eyebrow">INTEGRATION HUB / 系統解耦</span><div class="diagram-track"><div class="diagram-step"><span class="diagram-badge">A</span><b>CRM</b><small>產生客戶更新事件</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step gold"><span class="diagram-badge">M</span><b>Middleware</b><small>驗證、轉換、路由</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step purple"><span class="diagram-badge">Q</span><b>Message Queue</b><small>暫存並等待處理</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step green"><span class="diagram-badge">B</span><b>ERP</b><small>依自己的速度消費</small></div></div><div class="diagram-callout">ERP 暫時離線時，訊息可以留在 Queue；若處理失敗，則應進入錯誤佇列並留下監控紀錄。</div><figcaption id="middleware-caption">解耦後，來源不必等目標立刻完成，但團隊也必須補上佇列監控與重試規則。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：Middleware 與 Message Queue — 系統之間的轉運站</h2><p>兩套系統要交換客戶與訂單資料，卻在格式、權限或流量上卡住。團隊知道問題和「Middleware」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>轉運站沒有監控與錯誤佇列，失敗訊息會悄悄消失。</p></section>
 

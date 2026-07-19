@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -132,6 +133,22 @@
       <li>認得 Tag、Element、Attribute 這三個名詞。</li>
       <li>看到一小段 HTML 原始碼時,能大致猜出這段畫面長什麼樣子。</li>
     </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">圖解</span>
+    <h2>HTML 是一棵有父子關係的樹</h2>
+    <figure class="learning-figure" aria-labelledby="dom-caption">
+      <span class="figure-eyebrow">DOCUMENT TREE / 網頁結構</span>
+      <div class="dom-tree">
+        <div class="dom-node root">&lt;html&gt;</div><span class="dom-branch" aria-hidden="true"></span>
+        <div class="dom-row"><span class="dom-node">&lt;head&gt;</span><span class="dom-node">&lt;body&gt;</span></div>
+        <span class="dom-branch" aria-hidden="true"></span>
+        <div class="dom-row"><span class="dom-node">&lt;h1 class="title"&gt;</span><span class="dom-node">&lt;p&gt;</span><span class="dom-node">&lt;button disabled&gt;</span></div>
+      </div>
+      <div class="diagram-callout">Tag 是標記名稱；Element 是完整節點；class、disabled 等 Attribute 則補充節點的特徵。</div>
+      <figcaption id="dom-caption">縮排不是裝飾，它讓父元素、子元素與同層元素的關係一眼可見。</figcaption>
+    </figure>
   </section>
 
   <section class="card">

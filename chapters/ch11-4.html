@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>Repository、Commit 與 Branch</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>Repository 保存版本歷史，Commit 是一組有意義的變更，Branch 是隔離工作的版本線。</p><ul><li>看懂 Repository 與 Commit 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>Repository 裡，Commit 串成歷史，Branch 分出工作線</h2><figure class="learning-figure" aria-labelledby="git-caption"><span class="figure-eyebrow">VERSION GRAPH / 版本歷史</span><div class="git-graph"><span class="git-dot">A</span><div class="git-label"><b>main</b> 建立課程首頁</div><span class="git-dot">B</span><div class="git-label"><b>main</b> 新增第一章</div><span class="git-dot" style="border-color:var(--visual-gold);color:var(--visual-gold)">C</span><div class="git-label"><b>feature/visual-aids</b> 從 B 分出，加入圖解</div><span class="git-dot" style="border-color:var(--visual-green);color:var(--visual-green)">D</span><div class="git-label"><b>merge</b> 審查後合回 main</div></div><div class="diagram-callout">Repository 是整本歷史；Commit 是一個可說明的修改節點；Branch 則讓尚未完成的工作不影響主線。</div><figcaption id="git-caption">好的 Commit 範圍小而完整，日後才能清楚審查、定位與回復。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：Repository、Commit 與 Branch</h2><p>測試環境正常的變更，上線後卻出現設定差異。團隊知道問題和「Repository」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>把多個無關修改塞進同一 Commit，審查與回復都會變難。</p></section>
 

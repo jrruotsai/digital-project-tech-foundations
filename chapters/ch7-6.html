@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -123,6 +124,8 @@
 <div class="stage">
 
   <section class="card active"><span class="tag">歡迎回來</span><h2>自動化循環 — 兩個系統互相觸發的無限迴圈</h2><p class="lead">預估 30 分鐘 ・ Webhook、事件與自動化</p><p>自動化循環是 A 的更新觸發 B，B 又回頭觸發 A；要用來源標記、條件或去重切斷。</p><ul><li>看懂 自動化循環 與 兩個系統互相觸發的無限迴圈 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+  <section class="card"><span class="tag">圖解</span><h2>一次正常同步，如何變成無限迴圈？</h2><figure class="learning-figure" aria-labelledby="loop-caption"><span class="figure-eyebrow">AUTOMATION LOOP / 互相回寫</span><div class="diagram-track"><div class="diagram-step"><span class="diagram-badge">1</span><b>CRM 更新電話</b><small>觸發同步事件</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step gold"><span class="diagram-badge">2</span><b>ERP 收到並寫入</b><small>又產生更新事件</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step purple"><span class="diagram-badge">3</span><b>CRM 再次收到</b><small>同一個值又被寫回</small></div><span class="diagram-arrow" aria-hidden="true"></span><div class="diagram-step green"><span class="diagram-badge">STOP</span><b>切斷條件</b><small>來源標記、值未變或事件去重</small></div></div><div class="diagram-callout">終止條件要放在觸發前判斷；只在流程最後寫 Log，仍阻止不了下一輪事件。</div><figcaption id="loop-caption">找迴圈時，先畫出「誰的寫入會觸發誰」，再決定在哪一條箭頭上切斷。</figcaption></figure></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：自動化循環 — 兩個系統互相觸發的無限迴圈</h2><p>客戶資料更新後觸發自動化，但事件延遲、重複或失敗。團隊知道問題和「自動化循環」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>兩套系統互相回寫同一欄位，可能無限產生更新事件。</p></section>
 
