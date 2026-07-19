@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,7 @@
 
 <div class="stage">
 
-  <section class="card active">
+<section class="card active">
     <span class="tag">歡迎回來</span>
     <h2>使用 Browser Network<br>觀察 Request</h2>
     <p class="lead">預估 30 分鐘 ・ 單元 2 的最後一章,建議先讀完 2-1 至 2-7。</p>
@@ -133,6 +134,9 @@
       <li>知道下次排查問題時,可以自己先看一眼 Network,再找工程師。</li>
     </ul>
   </section>
+
+<section class="card"><span class="tag">動手試</span><h2>在 Network 面板裡，找出一個失敗 Request</h2><div class="learning-tool"><div class="tool-kicker">PRACTICE / 先作答再展開</div><div class="practice-shell"><div class="practice-bar"><span>BROWSER NETWORK</span><span>TRY IT</span></div><pre class="practice-prompt">任務：重新載入頁面，選一筆紅色或非 2xx 的請求。
+記下 Method、URL、Status、Request Payload、Response 與 Request ID。</pre></div><details class="practice-answer"><summary>完成後，展開參考答案</summary><div>判斷順序：先看 <code>Status</code> 決定問題方向，再比對送出的 Request，最後保存 Response 與 Request ID。不要只截紅色那一行。</div></details></div></section>
 
   <section class="card">
     <span class="tag">情境</span>
@@ -216,7 +220,7 @@
 
   <section class="card">
     <span class="tag">核心概念 2/2</span>
-    <h2>看懂 Status 欄位,就能做初步判斷</h2>
+    <h2>先用 Status 分類，再讀 Request 與 Response</h2>
     <h3>概念三:紅色或標示異常的紀錄,通常代表出了問題</h3>
     <p>多數瀏覽器會用顏色或特殊標示,凸顯狀態碼異常(如 4 開頭或 5 開頭)的紀錄,方便您一眼掃過去就能發現異常之處,不需要逐筆檢查。</p>
     <h3>概念四:找不到某筆該有的 Request,本身也是重要線索</h3>

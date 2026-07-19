@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -132,6 +133,21 @@
       <li>理解 JOIN 條件寫錯時,資料會「變多」或「變少」的原因。</li>
       <li>分辨「內接」與「外接」造成的結果差異。</li>
     </ul>
+  </section>
+
+  <section class="card">
+    <span class="tag">圖解</span>
+    <h2>JOIN 用共同欄位把兩張表接起來</h2>
+    <figure class="learning-figure" aria-labelledby="join-caption">
+      <span class="figure-eyebrow">RELATIONAL JOIN / 依鍵值配對</span>
+      <div class="mini-tables">
+        <div class="mini-table"><b>Customers</b><span><i>ID</i><i>Name</i></span><span><i>C01</i><i>安琪</i></span><span><i>C02</i><i>柏宇</i></span></div>
+        <div class="join-mark" aria-hidden="true">⋈</div>
+        <div class="mini-table"><b>Orders</b><span><i>CustomerID</i><i>Amount</i></span><span><i>C01</i><i>$800</i></span><span><i>C01</i><i>$500</i></span></div>
+      </div>
+      <div class="join-result">C01 安琪 → $800、$500　｜　C02 柏宇 → INNER JOIN 不出現；LEFT JOIN 保留空值</div>
+      <figcaption id="join-caption">同一位客戶有兩筆訂單，JOIN 後自然會出現兩列；這不是重複資料，而是一對多關係。</figcaption>
+    </figure>
   </section>
 
   <section class="card">

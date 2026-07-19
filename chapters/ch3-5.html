@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>3-5 Margin、Padding 與版面｜企業應用顧問技術基礎培訓</title>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 <style>
   :root{
     --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
@@ -159,6 +160,39 @@
     <p>除了留白,相框本身還有<strong>尺寸</strong>——多寬多高,對應到 CSS 的 <code>Width(寬度)</code> 和 <code>Height(高度)</code> 屬性,決定這個元素本身佔多大空間。</p>
     <p>還有一個決定「這面牆上的相框怎麼擺放」的屬性,叫 <strong>Display(顯示方式)</strong>——例如相框是一個一個往下疊(常見設定是 block,像 3-2 教過的 div 預設會這樣排列),還是並排放在同一排(常見設定是 inline,像 span 預設會這樣排列)。</p>
     <p>回到開頭姓名和 Email 欄位擠在一起的問題。工程師說要調 <code>margin</code>,意思是要在這兩個欄位「之間」增加空隙,讓它們不再緊貼彼此——這正是 Margin(元素跟其他元素的距離)該負責的事,而不是 Padding(元素內部的留白)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">互動圖解</span>
+    <h2>親手拉動 Margin 與 Padding</h2>
+    <p>拖曳下方兩個控制項，觀察橘色的「元素外部」與黃色的「元素內部」分別在哪裡變大。</p>
+    <figure class="learning-figure box-model-demo" data-box-model aria-labelledby="box-model-caption">
+      <span class="figure-eyebrow">Interactive CSS box model</span>
+      <div class="box-model-stage">
+        <div class="box-margin">
+          <div class="box-border">
+            <div class="box-padding">
+              <div class="box-content">Content<br>內容</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="box-labels" aria-hidden="true">
+        <span>橘色斜線＝Margin 外距</span>
+        <span>黑線＝Border 邊框</span>
+        <span>黃色斜線＝Padding 內距</span>
+        <span>藍色＝Content 內容</span>
+      </div>
+      <div class="visual-controls">
+        <label>Margin 外距 <output data-margin-output>24px</output>
+          <input data-margin-control type="range" min="0" max="36" value="24" aria-label="調整 Margin 外距">
+        </label>
+        <label>Padding 內距 <output data-padding-output>24px</output>
+          <input data-padding-control type="range" min="0" max="36" value="24" aria-label="調整 Padding 內距">
+        </label>
+      </div>
+      <figcaption id="box-model-caption">Margin 把整個元素推離外界；Padding 把內容推離自己的邊框。兩者數值都可能是 24px，但作用位置完全不同。</figcaption>
+    </figure>
   </section>
 
   <section class="card">
@@ -458,5 +492,6 @@ CSS:
   show(0);
 })();
 </script>
+<script src="../assets/learning-visuals.js"></script>
 </body>
 </html>

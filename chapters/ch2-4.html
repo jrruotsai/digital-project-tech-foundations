@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,17 +123,19 @@
 
 <div class="stage">
 
-  <section class="card active">
+<section class="card active">
     <span class="tag">歡迎回來</span>
     <h2>Status Code<br>系統回覆的暗號</h2>
     <p class="lead">預估 30 分鐘 ・ 建議先讀完 2-2、2-3 再來。</p>
     <p>您一定看過網頁跳出「404」或聽過工程師說「回傳 500」。這些三位數的數字,是 Server 在 Response 裡附上的「暗號」,告訴 Client 這次請求到底處理得怎麼樣。這一章要教您看懂最常見的幾個暗號。</p>
     <ul>
-      <li>看懂 200、201、400、401、403、404、429、500 這幾個常見狀態碼的意思。</li>
+      <li>根據 200、201、400、401、403、404、429、500 判斷下一步應檢查 Request、權限、限流或 Server Log。</li>
       <li>分辨「這是誰的問題」——是 Client 端的問題,還是 Server 端的問題。</li>
       <li>拿到一個陌生的狀態碼時,知道大概該往哪個方向猜。</li>
     </ul>
   </section>
+
+<section class="card"><span class="tag">判斷桌</span><h2>看到 Status Code，先判斷是哪一類</h2><div class="learning-tool"><div class="tool-kicker">COMPARE / 先看條件再選</div><div class="compare-grid" style="--compare-cols:4"><div class="compare-panel"><h3>2xx 成功</h3><dl><dt>代表</dt><dd>Server 已接受或完成</dd><dt>先查</dt><dd>結果是否也符合業務規則</dd></dl></div><div class="compare-panel"><h3>3xx 轉向</h3><dl><dt>代表</dt><dd>資源位置或快取流程改變</dd><dt>先查</dt><dd>Location 與重新導向次數</dd></dl></div><div class="compare-panel"><h3>4xx 請求問題</h3><dl><dt>代表</dt><dd>格式、權限或資源不符</dd><dt>先查</dt><dd>Request 與登入狀態</dd></dl></div><div class="compare-panel"><h3>5xx 伺服器問題</h3><dl><dt>代表</dt><dd>Server 處理失敗</dd><dt>先查</dt><dd>Request ID、時間與 Log</dd></dl></div></div><div class="tool-rule">判斷口訣：第一位數先決定方向，再讀完整代碼與 Response Body。</div></div></section>
 
   <section class="card">
     <span class="tag">情境</span>

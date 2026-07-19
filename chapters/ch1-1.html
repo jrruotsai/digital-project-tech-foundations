@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>1-1 前端、後端與資料庫｜企業應用顧問技術基礎培訓</title>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 <style>
   :root{
     --bg:#FAF9F5;
@@ -235,6 +236,34 @@
       <span class="nt">比喻先放下，記住這句就好</span>
       前端負責<strong>給人看、給人填</strong>；後端負責<strong>檢查和處理</strong>；資料庫負責<strong>記下來</strong>。三個角色，三種責任。
     </div>
+  </section>
+
+  <!-- 卡 5：視覺圖解 -->
+  <section class="card">
+    <span class="tag">視覺圖解</span>
+    <h2>一筆表單資料，會走過哪三層？</h2>
+    <p>先看責任，再看資料方向。使用者只碰到前端，但真正的檢查與保存發生在後面兩層。</p>
+    <figure class="learning-figure" aria-labelledby="three-tier-caption">
+      <span class="figure-eyebrow">Three-tier architecture</span>
+      <div class="visual-flow" role="img" aria-label="使用者從前端送出資料，後端檢查規則，再由資料庫保存；結果沿原路回到前端">
+        <div class="visual-node blue">
+          <strong>前端</strong>
+          <span>顯示表單<br>收集使用者輸入</span>
+        </div>
+        <div class="visual-arrow" aria-hidden="true">→</div>
+        <div class="visual-node gold">
+          <strong>後端</strong>
+          <span>檢查必填、權限<br>執行商業規則</span>
+        </div>
+        <div class="visual-arrow" aria-hidden="true">→</div>
+        <div class="visual-node green">
+          <strong>資料庫</strong>
+          <span>新增或更新紀錄<br>長期保存資料</span>
+        </div>
+      </div>
+      <figcaption id="three-tier-caption">送出方向是「呈現與收集 → 檢查與處理 → 保存」；查詢結果與錯誤訊息再沿原路回到使用者畫面。</figcaption>
+    </figure>
+    <div class="note"><span class="nt">排查時怎麼用</span>先問「畫面有送出嗎？」再問「後端有收到並通過規則嗎？」最後確認「資料庫是否真的寫入？」</div>
   </section>
 
   <!-- 卡 5：正式定義 -->

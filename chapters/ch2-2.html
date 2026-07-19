@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>2-2 HTTP Request 與 Response｜企業應用顧問技術基礎培訓</title>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 <style>
   :root{
     --bg:#FAF9F5; --surface:#FFFFFF; --surface-warm:#F5F4ED;
@@ -160,6 +161,34 @@
     <p><strong>Header(標頭)</strong>就像信封上額外寫的備註:這封信是什麼格式(純文字還是有附件)、寄件人是誰、需不需要對方先確認身分。它是溝通這次往來的「附加資訊」,不是主要內容本身。</p>
     <p><strong>Body(本文)</strong>就是信紙裡真正的內容:如果是 Request,可能是您在表單裡填的資料;如果是 Response,可能是 Server 回傳給您的實際資訊。</p>
     <p>還有一個常見的詞:<strong>Query Parameter(查詢參數)</strong>,它是寫在網址後面、用問號開頭的一小段資訊,像是 <code>?keyword=手機</code>,常用來告訴 Server「我要篩選哪些條件」,可以想成是寫在信封正面的「特別指定條件」,比 Header 更顯眼,也更常被使用者直接看到(因為它就出現在網址列上)。</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">視覺圖解</span>
+    <h2>Request 去，Response 回</h2>
+    <p>一次 HTTP 溝通不是單向傳資料，而是 Client 問一次、Server 回一次。</p>
+    <figure class="learning-figure" aria-labelledby="http-roundtrip-caption">
+      <span class="figure-eyebrow">HTTP round trip</span>
+      <div class="roundtrip" role="img" aria-label="Client 將帶有 Header 與 Body 的 Request 送給 Server，Server 再回傳帶有 Status、Header 與 Body 的 Response">
+        <div class="visual-node blue client">
+          <strong>Client</strong>
+          <span>瀏覽器或 App<br>提出需求</span>
+        </div>
+        <div class="message-strip request">
+          <b>Request 請求</b>
+          <span>Header：格式、身分<br>Body：表單資料</span>
+        </div>
+        <div class="visual-node gold server">
+          <strong>Server</strong>
+          <span>接收、驗證<br>處理需求</span>
+        </div>
+        <div class="message-strip response">
+          <b>Response 回應</b>
+          <span>Status：成功或失敗<br>Body：結果或錯誤</span>
+        </div>
+      </div>
+      <figcaption id="http-roundtrip-caption">排查時要把一來一回放在一起看：Request 說明送了什麼，Response 說明 Server 最後怎麼處理。</figcaption>
+    </figure>
   </section>
 
   <section class="card">
