@@ -28,11 +28,6 @@
 
 ## 課程內容
 
-- 4 個學習階段
-- 13 個單元
-- 122 個小章節
-- 每章預估約 30 分鐘
-
 課程涵蓋以下四個階段：
 
 1. 資訊系統的共同語言
@@ -46,4 +41,3 @@
 
 [開啟「企業應用與數位專案技術基礎」課程網站](https://jrruotsai.github.io/digital-project-tech-foundations/)
 
-網站會在 `main` 分支更新後，透過 GitHub Actions 自動部署到 GitHub Pages。
