@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,9 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>Authentication 與 Authorization 的差異</h2><p class="lead">預估 30 分鐘 ・ Authentication、Authorization 與 SSO</p><p>Authentication 確認你是誰，Authorization 決定你能做什麼。登入成功不代表有權存取所有功能。</p><ul><li>看懂 Authentication 與 Authorization 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>Authentication 與 Authorization 的差異</h2><p class="lead">預估 30 分鐘 ・ Authentication、Authorization 與 SSO</p><p>Authentication 確認你是誰，Authorization 決定你能做什麼。登入成功不代表有權存取所有功能。</p><ul><li>看懂 Authentication 與 Authorization 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">判斷桌</span><h2>Authentication 和 Authorization 分別回答什麼？</h2><div class="learning-tool"><div class="tool-kicker">COMPARE / 先看條件再選</div><div class="compare-grid" style="--compare-cols:2"><div class="compare-panel"><h3>Authentication</h3><dl><dt>問題</dt><dd>你是誰？</dd><dt>證據</dt><dd>密碼、憑證、MFA、Session</dd><dt>失敗例子</dt><dd>無法登入</dd></dl></div><div class="compare-panel"><h3>Authorization</h3><dl><dt>問題</dt><dd>你可以做什麼？</dd><dt>證據</dt><dd>Role、Permission、Policy</dd><dt>失敗例子</dt><dd>登入後看不到功能</dd></dl></div></div><div class="tool-rule">判斷口訣：先驗明身分，再判斷這個身分可以做什麼。</div></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：Authentication 與 Authorization 的差異</h2><p>使用者無法登入企業應用，畫面只顯示身分驗證失敗。團隊知道問題和「Authentication」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>把權限不足當成登入失敗，會查錯系統層級。</p></section>
 

@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,7 @@
 
 <div class="stage">
 
-  <section class="card active">
+<section class="card active">
     <span class="tag">歡迎回來</span>
     <h2>SQL 查詢的基本概念<br>SELECT 與 WHERE</h2>
     <p class="lead">預估 30 分鐘 ・ 建議先讀完 4-1、4-3 再來。</p>
@@ -133,6 +134,12 @@
       <li>拿到一段簡單查詢時,能用中文說出它在問什麼。</li>
     </ul>
   </section>
+
+<section class="card"><span class="tag">動手試</span><h2>把業務問題翻成 SELECT 與 WHERE</h2><div class="learning-tool"><div class="tool-kicker">PRACTICE / 先作答再展開</div><div class="practice-shell"><div class="practice-bar"><span>SQL QUERY</span><span>TRY IT</span></div><pre class="practice-prompt">需求：從 Orders 表找出 status 為 Paid，且 amount 大於 10000 的 order_id 與 amount。
+
+SELECT ______
+FROM ______
+WHERE ______;</pre></div><details class="practice-answer"><summary>完成後，展開參考答案</summary><div><code>SELECT order_id, amount FROM Orders WHERE status = 'Paid' AND amount &gt; 10000;</code>　先確認欄位、表名與條件，再執行查詢。</div></details></div></section>
 
   <section class="card">
     <span class="tag">情境</span>

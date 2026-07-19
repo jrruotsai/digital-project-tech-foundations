@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,9 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>Pagination、Rate Limit 與 Timeout — 大量資料的三道關卡</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>Pagination 分批取資料，Rate Limit 限制呼叫量，Timeout 限制等待時間；大量交換要同時設計三者。</p><ul><li>看懂 Pagination 與 Rate Limit 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>Pagination、Rate Limit 與 Timeout — 大量資料的三道關卡</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>Pagination 分批取資料，Rate Limit 限制呼叫量，Timeout 限制等待時間；大量交換要同時設計三者。</p><ul><li>看懂 Pagination 與 Rate Limit 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">判斷桌</span><h2>大量資料遇到的三道關卡</h2><div class="learning-tool"><div class="tool-kicker">COMPARE / 先看條件再選</div><div class="compare-grid" style="--compare-cols:3"><div class="compare-panel"><h3>Pagination</h3><dl><dt>問題</dt><dd>一次回傳太多</dd><dt>做法</dt><dd>用 page、offset 或 cursor 分批取得</dd></dl></div><div class="compare-panel"><h3>Rate Limit</h3><dl><dt>問題</dt><dd>短時間呼叫太密集</dd><dt>做法</dt><dd>節流、排程並讀取限流 Header</dd></dl></div><div class="compare-panel"><h3>Timeout</h3><dl><dt>問題</dt><dd>處理時間超過等待上限</dd><dt>做法</dt><dd>縮小批次、非同步或安全重試</dd></dl></div></div><div class="tool-rule">判斷口訣：分頁管單次資料量，Rate Limit 管頻率，Timeout 管等待時間。</div></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：Pagination、Rate Limit 與 Timeout — 大量資料的三道關卡</h2><p>兩套系統要交換客戶與訂單資料，卻在格式、權限或流量上卡住。團隊知道問題和「Pagination」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>一次拉完所有資料或無限重試，會拖慢雙方系統。</p></section>
 

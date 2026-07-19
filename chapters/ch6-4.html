@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,15 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>JSON 基礎 — 看懂大括號裡的資料</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>JSON 以物件、陣列、鍵和值表達結構；型別、層級與括號位置都會影響解析。</p><ul><li>看懂 JSON 與 看懂大括號裡的資料 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>JSON 基礎 — 看懂大括號裡的資料</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>JSON 以物件、陣列、鍵和值表達結構；型別、層級與括號位置都會影響解析。</p><ul><li>看懂 JSON 與 看懂大括號裡的資料 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">動手試</span><h2>先用結構讀 JSON，不要逐字猜</h2><div class="learning-tool"><div class="tool-kicker">PRACTICE / 先作答再展開</div><div class="practice-shell"><div class="practice-bar"><span>JSON READING</span><span>TRY IT</span></div><pre class="practice-prompt">{
+  "customerId": "C01",
+  "active": true,
+  "orders": [{"id": "O9", "amount": 800}]
+}
+
+請指出字串、布林值、陣列與物件各在哪裡。</pre></div><details class="practice-answer"><summary>完成後，展開參考答案</summary><div><code>customerId</code> 的值是字串；<code>active</code> 是布林值；<code>orders</code> 是陣列；陣列中的每一筆 <code>{...}</code> 是物件。</div></details></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：JSON 基礎 — 看懂大括號裡的資料</h2><p>兩套系統要交換客戶與訂單資料，卻在格式、權限或流量上卡住。團隊知道問題和「JSON」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>把數字寫成文字或漏掉逗號，可能讓整份訊息無法讀取。</p></section>
 

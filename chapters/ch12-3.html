@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,9 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>如何重現問題 — Reproduce 是除錯的起點</h2><p class="lead">預估 30 分鐘 ・ 系統化除錯與 Root Cause Analysis</p><p>Reproduce 要記錄前置條件、操作步驟、資料與結果；能穩定重現才容易比較修正前後。</p><ul><li>看懂  與 Reproduce 是除錯的起點 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>如何重現問題 — Reproduce 是除錯的起點</h2><p class="lead">預估 30 分鐘 ・ 系統化除錯與 Root Cause Analysis</p><p>Reproduce 要記錄前置條件、操作步驟、資料與結果；能穩定重現才容易比較修正前後。</p><ul><li>看懂  與 Reproduce 是除錯的起點 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">工作檢核</span><h2>把問題變成任何人都能重現的步驟</h2><div class="learning-tool"><div class="tool-kicker">FIELD CHECK / 勾完才交付</div><div class="field-checklist"><label class="check-row"><input type="checkbox"><span>固定起始狀態<small>環境、帳號、資料與權限一致</small></span></label><label class="check-row"><input type="checkbox"><span>步驟可逐項執行<small>每一步只有一個明確動作</small></span></label><label class="check-row"><input type="checkbox"><span>保留發生時間<small>含時區，方便對照 Log</small></span></label><label class="check-row"><input type="checkbox"><span>至少重做一次<small>確認不是偶發操作或舊快取</small></span></label><label class="check-row"><input type="checkbox"><span>記錄成功與失敗樣本<small>找出兩者最小差異</small></span></label></div><div class="template-line">重現句型：在＿＿環境，用＿＿帳號，從＿＿開始，依序做＿＿，第＿＿步出現＿＿。</div></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：如何重現問題 — Reproduce 是除錯的起點</h2><p>使用者回報功能壞了，但沒有時間、步驟或錯誤畫面。團隊知道問題和「」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>只說「偶爾會壞」無法讓工程師知道從哪裡開始。</p></section>
 

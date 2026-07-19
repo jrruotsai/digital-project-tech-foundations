@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,9 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>部署前後檢核 — 顧問在上線日該確認什麼</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>部署前確認範圍、備份、權限與回復方案；部署後做 Smoke Test、監控與業務確認。</p><ul><li>看懂 部署前後檢核 與 顧問在上線日該確認什麼 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>部署前後檢核 — 顧問在上線日該確認什麼</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>部署前確認範圍、備份、權限與回復方案；部署後做 Smoke Test、監控與業務確認。</p><ul><li>看懂 部署前後檢核 與 顧問在上線日該確認什麼 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">工作檢核</span><h2>上線日交付檢核</h2><div class="learning-tool"><div class="tool-kicker">FIELD CHECK / 勾完才交付</div><div class="field-checklist"><label class="check-row"><input type="checkbox"><span>版本已鎖定<small>核對 Commit、Artifact 與核准紀錄</small></span></label><label class="check-row"><input type="checkbox"><span>備份與 Rollback 可用<small>負責人、步驟和觸發條件清楚</small></span></label><label class="check-row"><input type="checkbox"><span>環境設定已比對<small>Secret、Endpoint、Feature Flag 無誤</small></span></label><label class="check-row"><input type="checkbox"><span>Smoke Test 已定義<small>包含技術結果與核心業務流程</small></span></label><label class="check-row"><input type="checkbox"><span>監控與通報已就緒<small>知道去哪裡看、異常通知誰</small></span></label></div><div class="template-line">交付句型：版本＿＿於＿＿環境部署；Smoke Test 結果＿＿；觀察至＿＿；Rollback 負責人＿＿。</div></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：部署前後檢核 — 顧問在上線日該確認什麼</h2><p>測試環境正常的變更，上線後卻出現設定差異。團隊知道問題和「部署前後檢核」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>只有技術成功訊息，沒有使用者流程驗證，仍可能漏掉功能問題。</p></section>
 

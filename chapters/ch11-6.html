@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,11 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>CLI 的角色 — 沒有畫面的操作方式</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>CLI 用文字指令操作系統，適合重複、自動化與留下紀錄，但需要清楚的環境與參數。</p><ul><li>看懂 CLI 與 沒有畫面的操作方式 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>CLI 的角色 — 沒有畫面的操作方式</h2><p class="lead">預估 30 分鐘 ・ 環境、版本與部署</p><p>CLI 用文字指令操作系統，適合重複、自動化與留下紀錄，但需要清楚的環境與參數。</p><ul><li>看懂 CLI 與 沒有畫面的操作方式 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">動手試</span><h2>讀懂一條 CLI 指令的四個部分</h2><div class="learning-tool"><div class="tool-kicker">PRACTICE / 先作答再展開</div><div class="practice-shell"><div class="practice-bar"><span>COMMAND LINE</span><span>TRY IT</span></div><pre class="practice-prompt">git commit -m "Add login validation"
+
+請分出：程式、子命令、選項、選項值。</pre></div><details class="practice-answer"><summary>完成後，展開參考答案</summary><div>程式是 <code>git</code>；子命令是 <code>commit</code>；選項是 <code>-m</code>；選項值是提交訊息。執行前先確認目前路徑與目標環境。</div></details></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：CLI 的角色 — 沒有畫面的操作方式</h2><p>測試環境正常的變更，上線後卻出現設定差異。團隊知道問題和「CLI」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>在錯誤環境執行同一指令，結果可能完全不同。</p></section>
 

@@ -110,6 +110,7 @@
   .backlink{display:inline-block; margin-top:14px; margin-right:18px; color:var(--accent); font-size:15px;}
   @media (max-width:560px){.card{padding:24px 22px 28px;} .card h2{font-size:21px;}}
 </style>
+<link rel="stylesheet" href="../assets/learning-visuals.css">
 </head>
 <body>
 
@@ -122,7 +123,9 @@
 
 <div class="stage">
 
-  <section class="card active"><span class="tag">歡迎回來</span><h2>API、SFTP、Webhook 與 CSV 的選擇</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>API 適合即時互動，SFTP 與 CSV 適合批次檔案，Webhook 適合事件通知；選擇取決於時效、資料量與維運能力。</p><ul><li>看懂 API 與 SFTP 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+<section class="card active"><span class="tag">歡迎回來</span><h2>API、SFTP、Webhook 與 CSV 的選擇</h2><p class="lead">預估 30 分鐘 ・ API 與資料交換</p><p>API 適合即時互動，SFTP 與 CSV 適合批次檔案，Webhook 適合事件通知；選擇取決於時效、資料量與維運能力。</p><ul><li>看懂 API 與 SFTP 的用途。</li><li>能把概念放回企業系統的資料流。</li><li>遇到異常時知道先確認哪一項規則。</li></ul></section>
+
+<section class="card"><span class="tag">判斷桌</span><h2>交換資料時，選哪一條路？</h2><div class="learning-tool"><div class="tool-kicker">COMPARE / 先看條件再選</div><div class="compare-grid" style="--compare-cols:4"><div class="compare-panel"><h3>API</h3><dl><dt>適合</dt><dd>即時查詢或動作</dd><dt>注意</dt><dd>驗證、限流與版本</dd></dl></div><div class="compare-panel"><h3>Webhook</h3><dl><dt>適合</dt><dd>事件發生就通知</dd><dt>注意</dt><dd>重送、簽章與去重</dd></dl></div><div class="compare-panel"><h3>SFTP</h3><dl><dt>適合</dt><dd>定時交換大量檔案</dd><dt>注意</dt><dd>檔名、加密與落檔完整性</dd></dl></div><div class="compare-panel"><h3>CSV</h3><dl><dt>適合</dt><dd>簡單人工或批次匯入</dd><dt>注意</dt><dd>編碼、欄位順序與錯誤回報</dd></dl></div></div><div class="tool-rule">判斷口訣：先問即時性、資料量、觸發方式與失敗後怎麼補。</div></div></section>
 
   <section class="card"><span class="tag">情境</span><h2>工作現場：API、SFTP、Webhook 與 CSV 的選擇</h2><p>兩套系統要交換客戶與訂單資料，卻在格式、權限或流量上卡住。團隊知道問題和「API」有關，卻沒有共同的判斷方式。</p><div class="bubble">「目前看到的現象是什麼？哪個系統負責？要用什麼證據確認？」</div><p>為了追求即時而使用複雜方案，可能增加不必要的維運成本。</p></section>
 
